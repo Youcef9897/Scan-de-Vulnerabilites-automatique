@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Web Intelligent</title>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 1150px;
+            margin: auto;
+            background: white;
+            padding: 35px;
+            border-radius: 18px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 34px;
+            color: #0f172a;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 35px;
+            font-size: 16px;
+        }
+
+        .input-group { margin-bottom: 25px; }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            font-size: 15px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 13px 22px;
+            border: none;
+            border-radius: 10px;
+            background: #2563eb;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover { background: #1d4ed8; }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        #pdf-button {
+            display: none;
+            background: #16a34a;
+        }
+
+        #pdf-button:hover { background: #15803d; }
+
+        .progress-section { margin-top: 30px; }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        #progress-text {
+            font-weight: bold;
+            color: #334155;
+        }
+
+        #progress-percent { color: #475569; }
+
+        #progress-container {
+            width: 100%;
+            height: 24px;
+            background: #dbeafe;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #16a34a);
+            transition: width 0.4s ease;
+        }
+
+        .results-section { margin-top: 35px; }
+
+        .results-title {
+            margin-bottom: 15px;
+            font-size: 22px;
+            color: #0f172a;
+        }
+
+        #results {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 22px;
+            border-radius: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-family: Consolas, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 700px;
+            overflow-y: auto;
+            border-left: 6px solid #38bdf8;
+        }
+
+        .footer {
+            margin-top: 35px;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1>Plateforme intelligente d'analyse de sécurité réseau et web</h1>
+
+    <p class="subtitle">
+        Analyse automatisée des vulnérabilités réseau et web assistée par IA
+    </p>
+
+    <div class="input-group">
+        <label for="url">URL cible à analyser :</label>
+        <input type="text" id="url" placeholder="Exemple : http://localhost/mon-site/">
+    </div>
+
+    <div class="buttons">
+        <button id="scan-button" onclick="startScan()">Lancer l'analyse</button>
+        <button id="pdf-button" onclick="downloadPDF()">Télécharger le rapport PDF</button>
+    </div>
+
+    <div class="progress-section">
+        <div class="progress-header">
+            <span id="progress-text">En attente...</span>
+            <span id="progress-percent">0%</span>
+        </div>
+
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+    </div>
+
+    <div class="results-section">
+        <h2 class="results-title">Rapport technique</h2>
+        <div id="results">Aucun rapport généré pour le moment.</div>
+    </div>
+
+    <div class="footer">
+        Projet PST - Cybersécurité
+    </div>
+
+</div>
+
+<script>
+async function startScan() {
+    const url = document.getElementById("url").value.trim();
+    const button = document.getElementById("scan-button");
+    const bar = document.getElementById("progress-bar");
+    const text = document.getElementById("progress-text");
+    const percent = document.getElementById("progress-percent");
+    const results = document.getElementById("results");
+    const pdfButton = document.getElementById("pdf-button");
+
+    if (!url) {
+        alert("Merci de saisir une URL.");
+        return;
+    }
+
+    button.disabled = true;
+    pdfButton.style.display = "none";
+    bar.style.width = "0%";
+    percent.innerText = "0%";
+    text.innerText = "Initialisation...";
+    results.innerText = "Analyse en cours...";
+
+    await fetch("/start_scan", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "url=" + encodeURIComponent(url)
+    });
+
+    const interval = setInterval(async () => {
+        const response = await fetch("/progress");
+        const data = await response.json();
+
+        bar.style.width = data.progress + "%";
+        percent.innerText = data.progress + "%";
+        text.innerText = data.status;
+
+        if (data.progress >= 100) {
+            clearInterval(interval);
+            button.disabled = false;
+
+            const res = await fetch("/results");
+            const rep = await res.json();
+
+            results.innerText = rep.report || "Aucun rapport généré.";
+            pdfButton.style.display = "inline-block";
+        }
+    }, 1000);
+}
+
+function downloadPDF() {
+    window.location.href = "/download_pdf";
+}
+</script>
+
+</body>
+</html>
