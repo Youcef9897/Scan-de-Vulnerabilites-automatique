@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+</head>
+<body>
+  <h1>Login</h1>
+
+  <form onsubmit="return checkLogin()">
+    <input type="text" id="user" placeholder="username"><br>
+    <input type="password" id="pass" placeholder="password"><br>
+    <button type="submit">Login</button>
+  </form>
+
+  <script>
+    function checkLogin() {
+      if (
+        document.getElementById("user").value === "admin" &&
+        document.getElementById("pass").value === "admin123"
+      ) {
+        window.location.href = "index.html";
+        return false;
+      }
+      alert("Wrong credentials");
+      return false;
+    }
+  </script>
+</body>
+</html>
