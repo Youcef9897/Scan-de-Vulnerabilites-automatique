@@ -1,0 +1,19 @@
+Version: 2.0.11
+Testing SSL server example.lab on port 443 using SNI name example.lab
+  SSL/TLS Protocols:
+SSLv2     disabled
+SSLv3     disabled
+TLSv1.0   enabled
+TLSv1.1   enabled
+TLSv1.2   enabled
+TLSv1.3   enabled
+  Supported Server Cipher(s):
+Preferred TLSv1.3  256 bits  TLS_AES_256_GCM_SHA384        Curve 25519 DHE 253
+Accepted  TLSv1.0  128 bits  RC4-SHA
+Accepted  TLSv1.0  112 bits  DES-CBC3-SHA
+  SSL Certificate:
+RSA Key Strength:    1024
+Subject:  example.lab
+Issuer:   example.lab
+Not valid before: Jan  1 00:00:00 2025 GMT
+Not valid after:  Jan  1 00:00:00 2026 GMT

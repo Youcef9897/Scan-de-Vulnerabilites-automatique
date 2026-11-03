@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nmaprun scanner="nmap" args="nmap -Pn -sV -p 80,443,631,3306 localhost" version="7.80">
+<host><status state="up"/><address addr="127.0.0.1" addrtype="ipv4"/>
+<ports>
+<port protocol="tcp" portid="80"><state state="open"/><service name="http" product="Apache httpd" version="2.4.52" extrainfo="(Ubuntu)"/></port>
+<port protocol="tcp" portid="443"><state state="closed"/><service name="https"/></port>
+<port protocol="tcp" portid="631"><state state="open"/><service name="ipp" product="CUPS" version="2.4"/></port>
+<port protocol="tcp" portid="3306"><state state="open"/><service name="mysql" product="MySQL" version="5.5.5-10.6.23-MariaDB-0ubuntu0.22.04.1"/></port>
+</ports></host></nmaprun>

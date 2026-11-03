@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block titre %}Rapport — {{ r.cible.url }}{% endblock %}
+{% block contenu %}
+<section class="carte">
+  <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start">
+    <div>
+      <h1>Rapport d'analyse de sécurité</h1>
+      <p class="doux">{{ r.cible.url }} — {{ r.date }} — durée {{ r.durees.Total }} s</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a class="bouton" href="/scan/{{ r.id }}/pdf">Télécharger le PDF</a>
+      <a class="bouton second" href="/">Nouvelle analyse</a>
+    </div>
+  </div>
+  {% if r.cible.locale %}
+  <p class="alerte petit">Analyse lancée depuis la machine qui héberge le site : les ports ouverts sont marqués « À vérifier », car ils ne sont peut-être pas accessibles depuis le réseau.</p>
+  {% endif %}
+  {% for nom, err in r.erreurs_outils.items() %}{% if nom != "SSLScan" or r.cible.url.startswith("https") %}
+  <p class="alerte erreur petit">{{ nom }} : {{ err }}</p>{% endif %}{% endfor %}
+  {% for nom in r.outils_interrompus %}
+  <p class="alerte petit">{{ nom }} a atteint sa durée maximale : ses résultats sont partiels.</p>
+  {% endfor %}
+</section>
+
+<section class="carte synthese">
+  <div style="text-align:center">
+    <div style="font-size:46px;font-weight:700;color:var(--accent)">{{ r.score.score }}<span style="font-size:20px">/100</span></div>
+    <div style="font-weight:600">{{ r.score.niveau }}</div>
+    <div class="petit doux">{{ r.score.commentaire }}</div>
+  </div>
+  <div>
+    <h2>Synthèse</h2>
+    <p>{{ r.resume }}</p>
+    <p class="petit doux">Résumé rédigé : {{ r.resume_origine }}.</p>
+    <p>{% for g in gravites %}<span class="grav grav-{{ g }}">{{ r.score.comptes[g] }} {{ g|lower }}</span> {% endfor %}</p>
+  </div>
+</section>
+
+<section class="carte">
+  <h2>Constats</h2>
+  <table>
+    <tr><th>Réf.</th><th>Gravité</th><th>Constat</th><th>Vérification</th></tr>
+    {% for c in r.constats %}
+    <tr><td>{{ c.code }}</td><td><span class="grav grav-{{ c.gravite }}">{{ c.gravite }}</span></td>
+        <td><a href="#{{ c.code }}">{{ c.titre }}</a></td>
+        <td><span class="verif verif-{{ c.verification.split(' ')[0] }}">{{ c.verification }}</span></td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section class="carte">
+  <h2>Détail des constats</h2>
+  {% for c in r.constats %}
+  <details id="{{ c.code }}" {% if c.gravite in ("Élevée", "Moyenne") %}open{% endif %}>
+    <summary><span class="grav grav-{{ c.gravite }}">{{ c.gravite }}</span> <strong>{{ c.code }} — {{ c.titre }}</strong></summary>
+    <div class="contenu">
+      <p><strong>Description.</strong> {{ c.description }}</p>
+      <p><strong>Recommandation.</strong> {{ c.recommandation }}</p>
+      <p class="petit"><strong>Preuves</strong> ({{ c.sources|join(", ") }}) — <span class="verif verif-{{ c.verification.split(' ')[0] }}">{{ c.verification }}</span></p>
+      <pre>{{ c.preuves|join("\n") }}</pre>
+      {% if c.reference %}<p class="petit doux">Référence : {{ c.reference }}</p>{% endif %}
+    </div>
+  </details>
+  {% endfor %}
+</section>
+
+<section class="carte">
+  <h2>Ports et services détectés</h2>
+  {% if r.ports %}
+  <table>
+    <tr><th>Port</th><th>État</th><th>Service</th><th>Version</th></tr>
+    {% for p in r.ports %}<tr><td>{{ p.numero }}/{{ p.protocole }}</td><td>{{ p.etat }}</td><td>{{ p.service }}</td><td>{{ p.version }}</td></tr>{% endfor %}
+  </table>
+  {% else %}<p class="doux">Aucun résultat Nmap.</p>{% endif %}
+</section>
+
+<section class="carte">
+  <h2>Méthodologie</h2>
+  <table>
+    <tr><th>Étape</th><th>Version</th><th>Durée</th></tr>
+    <tr><td>Vérification directe (requêtes HTTP)</td><td>—</td><td>{{ r.durees["Vérification directe"] }} s</td></tr>
+    {% for nom in ("Nmap", "Nikto", "SSLScan") %}
+    <tr><td>{{ nom }}</td><td>{{ r.versions[nom] }}</td><td>{{ r.durees[nom] ~ " s" if nom in r.durees else "non lancé" }}</td></tr>
+    {% endfor %}
+    <tr><td>Résumé ({{ r.resume_origine }})</td><td>—</td><td>{{ r.durees["Résumé"] }} s</td></tr>
+  </table>
+  <p class="petit doux" style="margin-top:12px">{{ r.score.bareme }}</p>
+</section>
+
+<section class="carte">
+  <h2>Annexe : sorties brutes des outils</h2>
+  {% for nom, sortie in r.sorties.items() %}
+  <details><summary><strong>{{ nom }}</strong> <span class="petit doux">{{ r.commandes[nom] }}</span></summary>
+    <div class="contenu"><pre>{{ sortie }}</pre></div></details>
+  {% endfor %}
+</section>
+{% endblock %}

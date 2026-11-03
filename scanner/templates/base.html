@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titre %}Scanner de vulnérabilités{% endblock %}</title>
+<style>
+  :root {
+    --fond: #f4f6f9; --carte: #ffffff; --texte: #1c2733; --doux: #5b6878; --bord: #dde3ea;
+    --accent: #1f4e79; --eleve: #b42318; --moyen: #c2560c; --faible: #a16207; --info: #5b6878;
+    --ok: #15803d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fond); color: var(--texte);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Ubuntu, sans-serif; }
+  header.barre { background: var(--accent); color: #fff; padding: 14px 24px; }
+  header.barre a { color: #fff; text-decoration: none; font-weight: 600; }
+  main { max-width: 1040px; margin: 24px auto; padding: 0 16px; }
+  .carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 10px; padding: 20px 22px; margin-bottom: 18px; }
+  h1 { font-size: 22px; margin: 0 0 4px; } h2 { font-size: 18px; margin: 0 0 12px; color: var(--accent); }
+  .doux { color: var(--doux); } .petit { font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--bord); vertical-align: top; }
+  th { font-size: 13px; color: var(--doux); font-weight: 600; background: #f8fafc; }
+  .grav { display: inline-block; min-width: 72px; text-align: center; padding: 2px 8px; border-radius: 999px;
+          color: #fff; font-size: 12.5px; font-weight: 600; }
+  .grav-Élevée { background: var(--eleve); } .grav-Moyenne { background: var(--moyen); }
+  .grav-Faible { background: var(--faible); } .grav-Info { background: var(--info); }
+  .verif { font-size: 12.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--bord); white-space: nowrap; }
+  .verif-Confirmé { color: var(--ok); border-color: #b7e0c4; background: #effaf2; }
+  .verif-Faux { color: var(--doux); text-decoration: line-through; }
+  button, .bouton { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 10px 18px;
+                    font-size: 15px; cursor: pointer; text-decoration: none; display: inline-block; }
+  button:disabled { opacity: .5; cursor: default; }
+  .bouton.second { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+  input[type=text] { width: 100%; padding: 10px 12px; border: 1px solid var(--bord); border-radius: 8px; font-size: 15px; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; overflow-x: auto;
+        font-size: 12.5px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+  details { border: 1px solid var(--bord); border-radius: 8px; margin-bottom: 10px; background: #fff; }
+  details > summary { padding: 10px 14px; cursor: pointer; list-style: none; display: flex; gap: 10px; align-items: center; }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] > summary { border-bottom: 1px solid var(--bord); }
+  .contenu { padding: 12px 16px; }
+  .alerte { border-left: 4px solid var(--moyen); background: #fff7ed; padding: 10px 14px; border-radius: 6px; }
+  .erreur { border-left-color: var(--eleve); background: #fef2f2; }
+  a { color: var(--accent); }
+  summary .petit { overflow-wrap: anywhere; min-width: 0; }
+  .synthese { display: grid; grid-template-columns: 200px 1fr; gap: 22px; align-items: center; }
+  @media (max-width: 640px) {
+    th:nth-child(4), td:nth-child(4) { display: none; }
+    .synthese { grid-template-columns: 1fr; }
+    main { padding: 0 12px; }
+  }
+</style>
+</head>
+<body>
+<header class="barre"><a href="/">Scanner de vulnérabilités web</a></header>
+<main>{% block contenu %}{% endblock %}</main>
+</body>
+</html>

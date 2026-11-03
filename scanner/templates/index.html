@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block contenu %}
+<section class="carte">
+  <h1>Nouvelle analyse</h1>
+  <p class="doux">Nmap, Nikto et SSLScan sont lancés en parallèle, puis chaque constat est vérifié par une requête directe au site.</p>
+  <form id="formulaire">
+    <label for="cible"><strong>Adresse du site</strong></label>
+    <input type="text" id="cible" name="cible" value="http://localhost/mon-site/" autocomplete="off">
+    <p class="petit doux">Cibles autorisées sur cette plateforme : {{ cibles }}</p>
+    <label><input type="checkbox" id="autorisation"> Je confirme être le propriétaire de cette cible ou disposer d'une autorisation écrite pour l'analyser.</label>
+    <p><button type="submit" id="lancer">Lancer l'analyse</button></p>
+  </form>
+  <div id="message"></div>
+  <div id="suivi" hidden>
+    <p><strong id="etape">Démarrage…</strong> <span class="doux" id="pourcent"></span></p>
+    <div style="background:#e5e9f0;border-radius:6px;height:10px;overflow:hidden">
+      <div id="barre" style="height:100%;width:0;background:var(--accent);transition:width .4s"></div>
+    </div>
+  </div>
+</section>
+
+{% if historique %}
+<section class="carte">
+  <h2>Analyses précédentes</h2>
+  <table>
+    <tr><th>Date</th><th>Cible</th><th>Score</th><th>Niveau</th></tr>
+    {% for h in historique %}
+    <tr><td>{{ h.date }}</td><td><a href="/scan/{{ h.id }}">{{ h.url }}</a></td><td>{{ h.score }}/100</td><td>{{ h.niveau }}</td></tr>
+    {% endfor %}
+  </table>
+</section>
+{% endif %}
+
+<script>
+const f = document.getElementById("formulaire"), msg = document.getElementById("message");
+// Affiche un message d'erreur sans interpréter de HTML (évite toute injection de script)
+function erreur(texte) {
+  msg.innerHTML = "";
+  const p = document.createElement("p");
+  p.className = "alerte erreur";
+  p.textContent = texte;
+  msg.appendChild(p);
+}
+f.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  msg.innerHTML = "";
+  const bouton = document.getElementById("lancer");
+  bouton.disabled = true;
+  const rep = await fetch("/scan", {method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({cible: document.getElementById("cible").value,
+                          autorisation: document.getElementById("autorisation").checked})});
+  const d = await rep.json();
+  if (!rep.ok) {
+    erreur(d.erreur);
+    bouton.disabled = false;
+    return;
+  }
+  document.getElementById("suivi").hidden = false;
+  const minuteur = setInterval(async () => {
+    const r = await fetch(`/scan/${d.id}/etat`);
+    const s = await r.json();
+    document.getElementById("barre").style.width = s.progression + "%";
+    document.getElementById("pourcent").textContent = s.progression + " %";
+    document.getElementById("etape").textContent = s.etape;
+    if (s.termine) {
+      clearInterval(minuteur);
+      if (s.erreur) { erreur(s.erreur); bouton.disabled = false; }
+      else { window.location = `/scan/${d.id}`; }
+    }
+  }, 1000);
+});
+</script>
+{% endblock %}
