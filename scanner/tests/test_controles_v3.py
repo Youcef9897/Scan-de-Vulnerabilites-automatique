@@ -219,3 +219,18 @@ def test_cve_d_un_service_en_ecoute_locale_ne_coute_rien():
     apache = next(c for c in liste if "port 80" in c.titre)
     assert mysql.gravite == "Info" and "adresse locale" in mysql.recommandation
     assert apache.gravite == "Moyenne"
+
+
+def test_entetes_de_securite_presents_ne_donnent_aucun_constat():
+    """Sortie réelle de Nikto après le durcissement d'Apache (S7-A) : « Uncommon header ... found » n'est pas une faiblesse."""
+    from pathlib import Path
+    from vulnscan import analyse
+    from vulnscan.cible import Cible
+    from vulnscan.constats import constats_web
+    nikto = analyse.lire_nikto((Path(__file__).parent / "donnees" / "nikto_vm_durci.txt").read_text())
+    cible = Cible(url="http://localhost/mon-site/", schema="http", hote="localhost", port=80, adresses=["127.0.0.1"])
+    obs = {"accessible": True, "protection_cadres": True, "entetes_absents": [], "serveur": "Apache", "cookies": [],
+           "entetes": {"ETag": '"875-6552d7e58b4d8-gzip"'}}
+    titres = [c.titre for c in constats_web(cible, nikto, obs, [])]
+    assert titres == ["Site disponible uniquement en HTTP (pas de HTTPS)",
+                      "Fuite d'inode par l'en-tête ETag signalée par Nikto"], titres

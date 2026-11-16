@@ -231,11 +231,18 @@ def _lignes(nikto, motif):
     return [l for l in nikto["constats"] if re.search(motif, l, re.I)]
 
 
+# Nikto 2.1.5 signale comme « inhabituel » tout en-tête qu'il ne connaît pas, y compris les en-têtes de sécurité
+# récents. Leur présence est une bonne nouvelle : ces lignes ne doivent donner aucun constat.
+ENTETE_DE_SECURITE_PRESENT = re.compile(
+    r"Uncommon header '(x-frame-options|x-content-type-options|content-security-policy|referrer-policy|"
+    r"permissions-policy|strict-transport-security|cross-origin-[a-z-]+)' found", re.I)
+
 COOKIES_SESSION = re.compile(r"(sess|sid|jsession|phpsessid|token|auth)", re.I)
 
 
 def constats_web(cible, nikto, obs, ports) -> list:
     r = []
+    nikto = {**nikto, "constats": [l for l in nikto["constats"] if not ENTETE_DE_SECURITE_PRESENT.search(l)]}
     https = cible.schema == "https"
 
     # HTTPS

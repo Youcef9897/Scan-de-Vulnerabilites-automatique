@@ -1,0 +1,20 @@
+- Nikto v2.1.5
+---------------------------------------------------------------------------
++ Target IP:          127.0.0.1
++ Target Hostname:    localhost
++ Target Port:        80
++ Start Time:         2026-11-16 23:18:21 (GMT1)
+---------------------------------------------------------------------------
++ Server: Apache
++ Server leaks inodes via ETags, header found with file /mon-site/, fields: 0x875 0x6552d7e58b4d8
++ Uncommon header 'referrer-policy' found, with contents: strict-origin-when-cross-origin
++ Uncommon header 'content-security-policy' found, with contents: default-src 'self' https: data: 'unsafe-inline'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'
++ Uncommon header 'x-content-type-options' found, with contents: nosniff
++ Uncommon header 'permissions-policy' found, with contents: geolocation=(), camera=(), microphone=()
++ Uncommon header 'x-frame-options' found, with contents: DENY
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ Allowed HTTP Methods: GET, POST, OPTIONS, HEAD
++ 21 items checked: 0 error(s) and 7 item(s) reported on remote host
++ End Time:           2026-11-16 23:18:21 (GMT1) (0 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
