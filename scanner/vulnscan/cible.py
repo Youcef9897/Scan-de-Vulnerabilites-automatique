@@ -26,6 +26,12 @@ class Cible:
         """Vrai si la cible est la machine elle-même (127.0.0.1, ::1)."""
         return bool(self.adresses) and all(ipaddress.ip_address(a).is_loopback for a in self.adresses)
 
+    @property
+    def est_privee(self) -> bool:
+        """Vrai si la cible est une machine de lab : adresse locale ou privée (10.x, 172.16.x, 192.168.x).
+        Aucune autorité publique ne délivre de certificat pour ces adresses."""
+        return bool(self.adresses) and all(ipaddress.ip_address(a).is_private for a in self.adresses)
+
 
 def _resoudre(hote: str) -> list:
     try:

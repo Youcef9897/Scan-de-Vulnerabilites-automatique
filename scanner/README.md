@@ -29,6 +29,13 @@ Le premier scan réel du site de la VM donnait 64/100, avec deux faux positifs e
 
 Limites connues : le contrôle des chemins utilise une courte liste de noms courants et les liens de la page d'accueil ; un dossier au nom inhabituel doit être ajouté avec `CHEMINS_SUPPLEMENTAIRES`. Les CVE demandent un accès à Internet (les numéros de version sont envoyés à vulners.com).
 
+## Sites en HTTPS
+
+- **Adresse HTTP qui redirige vers HTTPS** : l'analyse suit la redirection si elle reste sur la même machine, et porte alors sur le site HTTPS (Nikto, chemins sensibles, SSLScan). Le rapport indique l'adresse réellement analysée. Une redirection vers une autre machine n'est jamais suivie.
+- **HTTPS disponible sans redirection** : le chiffrement et le certificat sont contrôlés quand même, et le constat « HTTP ne redirige pas vers HTTPS » est émis.
+- **Certificat** : il est présenté à la même vérification qu'un navigateur, et le constat dépend de la raison du refus. Expiré ou émis pour un autre nom : gravité Moyenne. Auto-signé sur un site public : Moyenne. Auto-signé sur une cible de lab (adresse locale ou privée) : **Faible**, car aucune autorité publique ne délivre de certificat pour ces adresses ; le point reste compté et le rapport rappelle qu'il faut un certificat reconnu en production.
+- **HSTS** : contrôlé sur la réponse HTTPS du site.
+
 ## ZAP en mode passif (étape S4-B, facultatif)
 
 ZAP est désactivé par défaut. Avec `ZAP_ACTIF=1`, la plateforme lance ZAP en même temps que les autres outils :

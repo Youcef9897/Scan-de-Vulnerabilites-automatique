@@ -305,7 +305,10 @@ def constats_web(cible, nikto, obs, ports) -> list:
             recommandation="Définir un en-tête Content-Security-Policy, en commençant par « default-src 'self' » puis en l'ajustant.",
             preuves=["Vérification : en-tête Content-Security-Policy absent"], sources=["Vérification"],
             reference="OWASP — Content Security Policy Cheat Sheet"))
-    if https and "Strict-Transport-Security" in absents:
+    # HSTS : contrôlé sur la réponse HTTPS du site, même quand l'adresse analysée est en HTTP.
+    hsts_absent = (obs["hsts_present"] is False) if "hsts_present" in obs \
+        else (https and "Strict-Transport-Security" in absents)
+    if hsts_absent:
         r.append(Constat(
             titre="HSTS non activé",
             gravite="Faible", categorie="En-têtes HTTP",
@@ -478,7 +481,51 @@ def constats_web(cible, nikto, obs, ports) -> list:
 
 # ---------------------------------------------------------------- Chiffrement (SSLScan)
 
-def constats_tls(ssl, obs) -> list:
+def _constat_certificat(ssl, obs, cible) -> Constat:
+    """Le certificat n'est pas accepté par un navigateur : le constat dépend de la raison et de la cible."""
+    raison = obs.get("certificat_raison") or ("auto-signé" if ssl.get("auto_signe") else "")
+    preuves = ["Vérification : le certificat est refusé par la vérification d'un navigateur"
+               + (f" ({obs['certificat_detail']})" if obs.get("certificat_detail") else "")]
+    if ssl.get("certificat_expire_le"):
+        preuves.append(f"SSLScan : Not valid after: {ssl['certificat_expire_le']}")
+    commun = dict(categorie="Chiffrement", preuves=preuves, sources=["Vérification", "SSLScan"],
+                  reference="OWASP Top 10 A02 — Défaillances cryptographiques")
+    if raison in ("expiré", "pas encore valide"):
+        return Constat(
+            titre="Certificat expiré" if raison == "expiré" else "Certificat pas encore valide", gravite="Moyenne",
+            description="Les dates de validité du certificat ne couvrent pas la date du jour : les visiteurs "
+                        "voient une alerte de sécurité et prennent l'habitude de l'ignorer.",
+            recommandation="Renouveler le certificat et automatiser son renouvellement (par exemple avec certbot).",
+            **commun)
+    if raison == "nom différent":
+        return Constat(
+            titre="Certificat émis pour un autre nom que le site", gravite="Moyenne",
+            description="Le certificat ne correspond pas au nom utilisé pour joindre le site : le navigateur "
+                        "ne peut pas garantir qu'il parle au bon serveur.",
+            recommandation="Générer un certificat dont le nom (champ subjectAltName) correspond à l'adresse du site.",
+            **commun)
+    if raison in ("auto-signé", "autorité inconnue") and cible is not None and cible.est_privee:
+        # Cible de lab : aucune autorité publique ne délivre de certificat pour localhost ou une adresse privée.
+        # Le chiffrement fonctionne, mais l'identité du serveur n'est pas garantie : le point reste compté, en Faible.
+        return Constat(
+            titre="Certificat auto-signé (acceptable en lab, à remplacer en production)", gravite="Faible",
+            description="Les échanges sont chiffrés, mais le certificat n'est signé par aucune autorité reconnue : "
+                        "le navigateur affiche une alerte et ne peut pas distinguer le vrai serveur d'un intermédiaire. "
+                        "Sur une adresse locale ou privée, aucune autorité publique ne peut délivrer de certificat : "
+                        "c'est le maximum possible en lab.",
+            recommandation="En production, utiliser un certificat délivré par une autorité reconnue "
+                           "(par exemple Let's Encrypt avec certbot). En lab, une autorité interne (mkcert) "
+                           "installée sur les postes supprime l'alerte.",
+            **commun)
+    return Constat(
+        titre="Certificat non reconnu par les navigateurs", gravite="Moyenne",
+        description="Le certificat est auto-signé ou signé par une autorité inconnue : les visiteurs voient une "
+                    "alerte, et une interception devient plus difficile à repérer.",
+        recommandation="Utiliser un certificat délivré par une autorité reconnue (par exemple Let's Encrypt).",
+        **commun)
+
+
+def constats_tls(ssl, obs, cible=None) -> list:
     r = []
     prot = ssl.get("protocoles", {})
     anciens = [p for p in ("SSLv2", "SSLv3") if prot.get(p)]
@@ -512,14 +559,7 @@ def constats_tls(ssl, obs) -> list:
             preuves=[f"SSLScan : RSA Key Strength: {ssl['taille_cle_rsa']}"], sources=["SSLScan"],
             reference="ANSSI — Recommandations de sécurité relatives à TLS"))
     if obs.get("certificat_valide") is False:
-        r.append(Constat(
-            titre="Certificat non reconnu par les navigateurs", gravite="Moyenne", categorie="Chiffrement",
-            description="Le certificat est auto-signé, expiré ou ne correspond pas au nom du site : les visiteurs "
-                        "voient une alerte, et une interception devient plus difficile à repérer.",
-            recommandation="Utiliser un certificat délivré par une autorité reconnue (par exemple Let's Encrypt).",
-            preuves=["Vérification : la validation du certificat a échoué"]
-                    + ([f"SSLScan : Not valid after: {ssl['certificat_expire_le']}"] if ssl.get("certificat_expire_le") else []),
-            sources=["Vérification", "SSLScan"], reference="OWASP Top 10 A02"))
+        r.append(_constat_certificat(ssl, obs, cible))
     return r
 
 
@@ -613,7 +653,7 @@ def constats_zap(alertes, existants) -> list:
 
 def construire(cible, ports, nikto, ssl, obs, ecoutes=None, chemins=None, zap=None) -> list:
     tous = (constats_reseau(cible, ports, ecoutes) + constats_cve(ports, ecoutes, cible) + constats_chemins(chemins)
-            + constats_web(cible, nikto, obs, ports) + constats_tls(ssl, obs))
+            + constats_web(cible, nikto, obs, ports) + constats_tls(ssl, obs, cible))
     if zap:
         tous += constats_zap(zap, tous)
     # Un listage vu à la fois par notre contrôle et par Nikto ne fait qu'un seul constat.

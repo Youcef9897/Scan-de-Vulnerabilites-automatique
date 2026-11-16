@@ -127,15 +127,19 @@ def commande_sslscan(hote: str, port: int) -> list:
     return ["sslscan", "--no-colour", f"{hote}:{port}"]
 
 
-def lancer_tous(cible, dossier: Path, suivi=None) -> dict:
-    """Lance les trois outils en parallèle. `suivi(nom, resultat)` est appelé à chaque fin d'outil."""
+def lancer_tous(cible, dossier: Path, suivi=None, port_https=None) -> dict:
+    """Lance les trois outils en parallèle. `suivi(nom, resultat)` est appelé à chaque fin d'outil.
+
+    `port_https` : port HTTPS du site quand l'adresse analysée est en HTTP mais que le site répond aussi
+    en HTTPS ; SSLScan est alors lancé quand même."""
     taches = {
         "Nmap": (commande_nmap(cible.hote, dossier / "nmap.xml"), config.DUREE_MAX_NMAP),
         "Nikto": (commande_nikto(cible.url), config.DUREE_MAX_NIKTO),
     }
     resultats = {}
-    if cible.schema == "https":
-        taches["SSLScan"] = (commande_sslscan(cible.hote, cible.port), config.DUREE_MAX_SSLSCAN)
+    if cible.schema == "https" or port_https:
+        taches["SSLScan"] = (commande_sslscan(cible.hote, cible.port if cible.schema == "https" else port_https),
+                             config.DUREE_MAX_SSLSCAN)
     else:
         resultats["SSLScan"] = ResultatOutil(
             nom="SSLScan", commande="(non lancé)",

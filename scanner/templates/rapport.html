@@ -12,6 +12,9 @@
       <a class="bouton second" href="/">Nouvelle analyse</a>
     </div>
   </div>
+  {% if r.cible.url_analysee and r.cible.url_analysee != r.cible.url %}
+  <p class="alerte petit">L'adresse saisie redirige vers HTTPS : l'analyse porte sur {{ r.cible.url_analysee }}.</p>
+  {% endif %}
   {% if r.cible.locale %}
   {% if r.ecoute_locale_lue %}
   <p class="alerte petit">Analyse lancée depuis la machine qui héberge le site : pour chaque port ouvert, l'adresse d'écoute réelle est lue sur la machine (commande ss). Un service qui n'écoute que sur 127.0.0.1 n'est pas joignable depuis le réseau et ne retire aucun point.</p>
@@ -19,7 +22,7 @@
   <p class="alerte petit">Analyse lancée depuis la machine qui héberge le site : les ports ouverts sont marqués « À vérifier », car ils ne sont peut-être pas accessibles depuis le réseau.</p>
   {% endif %}
   {% endif %}
-  {% for nom, err in r.erreurs_outils.items() %}{% if nom != "SSLScan" or r.cible.url.startswith("https") %}
+  {% for nom, err in r.erreurs_outils.items() %}{% if nom != "SSLScan" or (r.cible.url_analysee or r.cible.url).startswith("https") %}
   <p class="alerte erreur petit">{{ nom }} : {{ err }}</p>{% endif %}{% endfor %}
   {% for nom in r.outils_interrompus %}
   <p class="alerte petit">{{ nom }} a atteint sa durée maximale : ses résultats sont partiels.</p>

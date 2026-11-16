@@ -88,6 +88,8 @@ def generer_pdf(r: dict, chemin: Path):
     h += [Spacer(1, 5 * cm), Paragraph("Rapport d'analyse de sécurité", S["titre"]), Spacer(1, 0.4 * cm),
           P("Site web et services réseau", "sous"), Spacer(1, 2 * cm)]
     garde = [[P("Cible", "cell"), P(r["cible"]["url"], "cell")],
+             *([[P("Adresse analysée", "cell"), P(f"{r['cible']['url_analysee']} (redirection vers HTTPS)", "cell")]]
+               if r["cible"].get("url_analysee") not in (None, r["cible"]["url"]) else []),
              [P("Adresse(s)", "cell"), P(", ".join(r["cible"]["adresses"]), "cell")],
              [P("Date", "cell"), P(r["date"], "cell")],
              [P("Score", "cell"), P(f"{r['score']['score']}/100 — {r['score']['niveau']}", "cell")],

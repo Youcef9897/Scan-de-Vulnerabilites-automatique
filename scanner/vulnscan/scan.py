@@ -1,4 +1,5 @@
 """Déroulement complet d'un scan, de la cible au résultat enregistré."""
+import dataclasses
 import datetime
 import json
 import re
@@ -6,8 +7,26 @@ import threading
 import time
 import uuid
 
+from urllib.parse import urlsplit
+
 from . import (analyse, chemins as mod_chemins, config, constats as mod_constats, ecoute, outils, resume,
                score as mod_score, verification, zap as mod_zap)
+
+
+def cible_analysee(cible, obs):
+    """Si l'adresse HTTP redirige vers HTTPS sur la même machine, c'est le site HTTPS qui est analysé.
+
+    Sans cela, les outils ne verraient que des redirections et le chiffrement ne serait pas contrôlé.
+    Une redirection vers une autre machine n'est jamais suivie : elle sortirait de la cible autorisée.
+    """
+    finale = obs.get("url_finale") or ""
+    if cible.schema != "http" or not finale.startswith("https://"):
+        return cible
+    u = urlsplit(finale)
+    if (u.hostname or "").lower() != cible.hote.lower():
+        return cible
+    url = f"https://{u.netloc}{u.path or '/'}" + (f"?{u.query}" if u.query else "")
+    return dataclasses.replace(cible, url=url, schema="https", port=u.port or 443)
 
 
 class Scan:
@@ -56,6 +75,7 @@ class Scan:
         tv = time.time()
         obs = verification.verifier(self.cible)
         durees["Vérification directe"] = round(time.time() - tv, 1)
+        saisie, self.cible = self.cible, cible_analysee(self.cible, obs)
 
         ch = None
         if config.CHEMINS_ACTIFS and obs.get("accessible"):
@@ -79,7 +99,8 @@ class Scan:
             termines.append(nom)
             self._maj(10 + 22 * len(termines), f"{nom} terminé en {res.duree} s")
 
-        res_outils = outils.lancer_tous(self.cible, self.dossier, suivi)
+        res_outils = outils.lancer_tous(self.cible, self.dossier, suivi,
+                                        port_https=obs.get("port_https") if obs.get("https_disponible") else None)
         rapport_zap = None
         if fil_zap:
             self._maj(78, "ZAP explore les pages du site (analyse passive)…")
@@ -110,7 +131,7 @@ class Scan:
 
         self.resultat = {
             "id": self.id,
-            "cible": {"url": self.cible.url, "hote": self.cible.hote, "adresses": self.cible.adresses,
+            "cible": {"url": saisie.url, "url_analysee": self.cible.url, "hote": self.cible.hote, "adresses": self.cible.adresses,
                       "port": self.cible.port, "locale": self.cible.est_locale},
             "date": self.debut.strftime("%d/%m/%Y à %H:%M"),
             "durees": durees,
