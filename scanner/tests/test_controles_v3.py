@@ -201,3 +201,21 @@ def test_rapport_du_site_de_la_vm_apres_corrections(site_fragile, monkeypatch):
     assert [c.code for c in liste] == [f"C{i:02d}" for i in range(1, len(liste) + 1)]
     # 100 − 8×5 (clickjacking, HTTP seul, code source, listage, CVE) − 3×4 (nosniff, CSP, version, admin)
     assert score.calculer(liste)["score"] == 48
+
+
+def test_etag_compresse_reste_un_faux_positif():
+    """Scan réel du 16/11 : Apache renvoie « 875-6552d7e58b4d0-gzip » (page compressée)."""
+    (c,) = [c for c in _web([LIGNE_ETAG_VM], {"entetes": {"ETag": '"875-6552d7e58b4d0-gzip"'}}) if "ETag" in c.titre]
+    assert c.verification == constats.FAUX_POSITIF
+
+
+def test_cve_d_un_service_en_ecoute_locale_ne_coute_rien():
+    ports = analyse.lire_nmap_xml(DONNEES / "nmap_vulners.xml")
+    for p in ports:
+        if p.numero == 3306:
+            p.cves = [{"id": "CVE-2017-15945", "cvss": 7.8}]
+    liste = constats.constats_cve(ports, ecoute.lire_ss(SS_VM), _cible_locale())
+    mysql = next(c for c in liste if "port 3306" in c.titre)
+    apache = next(c for c in liste if "port 80" in c.titre)
+    assert mysql.gravite == "Info" and "adresse locale" in mysql.recommandation
+    assert apache.gravite == "Moyenne"

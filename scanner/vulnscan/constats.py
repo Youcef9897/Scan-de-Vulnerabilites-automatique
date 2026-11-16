@@ -108,7 +108,7 @@ def constats_reseau(cible, ports, ecoutes=None) -> list:
     return resultats
 
 
-def constats_cve(ports) -> list:
+def constats_cve(ports, ecoutes=None, cible=None) -> list:
     """Un constat par service dont la version annoncée correspond à des CVE publiées."""
     resultats = []
     for p in ports:
@@ -117,6 +117,10 @@ def constats_cve(ports) -> list:
         maxi = p.cves[0]["cvss"]
         # Constat fondé sur le seul numéro de version : un cran en dessous de la gravité CVSS.
         gravite = "Moyenne" if maxi >= 7 else "Faible" if maxi >= 4 else "Info"
+        adresses = (ecoutes or {}).get(p.numero) if (cible is not None and cible.est_locale) else None
+        locale = bool(adresses) and locale_uniquement(adresses)
+        if locale:
+            gravite = "Info"          # service injoignable depuis le réseau : à mettre à jour, sans urgence
         produit = p.version or p.service
         resultats.append(Constat(
             titre=f"{len(p.cves)} CVE connue(s) pour {produit} (port {p.numero})",
@@ -125,7 +129,9 @@ def constats_cve(ports) -> list:
                         f"avec un score CVSS maximal de {maxi}. Ce constat repose uniquement sur le numéro de version : "
                         "sur Debian et Ubuntu, les correctifs de sécurité sont souvent appliqués sans changer ce numéro, "
                         "d'où l'état « À vérifier ».",
-            recommandation="Mettre le paquet à jour (apt update && apt upgrade), puis contrôler les CVE les plus graves "
+            recommandation=("Le service n'écoute que sur l'adresse locale : il n'est pas attaquable depuis le réseau. "
+                            if locale else "")
+                           + "Mettre le paquet à jour (apt update && apt upgrade), puis contrôler les CVE les plus graves "
                            "sur le suivi de sécurité de la distribution (par exemple ubuntu.com/security/CVE-AAAA-NNNN).",
             preuves=[f"vulners : {c['id']} (CVSS {c['cvss']}) — https://nvd.nist.gov/vuln/detail/{c['id']}"
                      for c in p.cves[:5]]
@@ -195,7 +201,9 @@ def _constat_etag(lignes, obs) -> Constat:
             champs = 3
     entete = next((v for k, v in (obs.get("entetes") or {}).items() if k.lower() == "etag"), "")
     if entete:
-        champs = len(entete.strip('W/"').split("-"))
+        # Apache ajoute « -gzip » ou « -br » quand la page est compressée : ce n'est pas un champ de l'ETag.
+        valeur = re.sub(r"-(gzip|br|deflate|zstd)$", "", entete.strip().removeprefix("W/").strip('"'))
+        champs = len(valeur.split("-"))
     preuves = [f"Nikto : {l}" for l in lignes] + ([f"Vérification : ETag = {entete}"] if entete else [])
     if champs is not None and champs < 3:
         return Constat(
@@ -511,7 +519,7 @@ def constats_tls(ssl, obs) -> list:
 # ---------------------------------------------------------------- Assemblage
 
 def construire(cible, ports, nikto, ssl, obs, ecoutes=None, chemins=None) -> list:
-    tous = (constats_reseau(cible, ports, ecoutes) + constats_cve(ports) + constats_chemins(chemins)
+    tous = (constats_reseau(cible, ports, ecoutes) + constats_cve(ports, ecoutes, cible) + constats_chemins(chemins)
             + constats_web(cible, nikto, obs, ports) + constats_tls(ssl, obs))
     # Un listage vu à la fois par notre contrôle et par Nikto ne fait qu'un seul constat.
     listages = [c for c in tous if c.titre == TITRE_LISTAGE]
