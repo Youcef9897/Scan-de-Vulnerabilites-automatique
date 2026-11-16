@@ -175,3 +175,70 @@ def generer_pdf(r: dict, chemin: Path):
                             title="Rapport d'analyse de sécurité", author="Scanner de vulnérabilités")
     doc.build(h, onFirstPage=pied, onLaterPages=pied)
     return chemin
+
+
+COULEURS_STATUT = {"Corrigé": colors.HexColor("#15803d"), "Atténué": colors.HexColor("#0f5e8a"),
+                   "Nouveau": colors.HexColor("#b42318"), "Aggravé": colors.HexColor("#b42318"),
+                   "Toujours présent": GRIS}
+
+
+def generer_pdf_comparaison(c: dict, chemin: Path):
+    """PDF d'une page ou deux : scores avant/après et sort de chaque constat (étape S8)."""
+    normal, gras, mono = _polices()
+    S = _styles(normal, gras, mono)
+    P = lambda txt, st="p": Paragraph(escape(str(txt)), S[st])
+
+    def pied(canvas, doc):
+        canvas.saveState()
+        canvas.setFont(normal, 8)
+        canvas.setFillColor(GRIS)
+        canvas.drawString(2 * cm, 1.2 * cm, f"Comparaison avant / après — {c['apres']['url']}")
+        canvas.drawRightString(19 * cm, 1.2 * cm, f"Page {doc.page}")
+        canvas.restoreState()
+
+    h = [Paragraph("Comparaison avant / après", S["titre"]), Spacer(1, 0.2 * cm), P(c["apres"]["url"], "sous"),
+         Spacer(1, 0.6 * cm)]
+    if not c["meme_cible"]:
+        h += [P(f"Attention : les deux analyses ne portent pas sur la même adresse ({c['avant']['url']}).", "petit")]
+    centre = ParagraphStyle("ce", parent=S["petit"], alignment=TA_CENTER)
+    niveau = ParagraphStyle("ni", parent=S["h2"], alignment=TA_CENTER)
+    signe = f"{c['ecart']:+d}"
+    couleur_ecart = "#15803d" if c["ecart"] > 0 else "#b42318" if c["ecart"] < 0 else "#5b6878"
+    duel = Table([[Paragraph(escape(f"Avant — {c['avant']['date']}"), centre), "",
+                   Paragraph(escape(f"Après — {c['apres']['date']}"), centre)],
+                  [Paragraph(f"{c['avant']['score']}<font size=14>/100</font>", S["score"]),
+                   Paragraph(f"<font color='{couleur_ecart}'>{signe}</font>", S["score"]),
+                   Paragraph(f"{c['apres']['score']}<font size=14>/100</font>", S["score"])],
+                  [Paragraph(escape(c["avant"]["niveau"]), niveau), "", Paragraph(escape(c["apres"]["niveau"]), niveau)]],
+                 colWidths=[6 * cm, 4.5 * cm, 6 * cm])
+    duel.setStyle(TableStyle([("ALIGN", (0, 0), (-1, -1), "CENTER"), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                              ("BOX", (0, 0), (-1, -1), 0.6, BORD),
+                              ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f3f6fa"))]))
+    h += [duel, Spacer(1, 0.4 * cm), P(c["bilan"]), Spacer(1, 0.3 * cm),
+          Paragraph("Constats qui comptent dans le score", S["h1"])]
+
+    if c["lignes"]:
+        lignes = [[P("Statut", "cell"), P("Constat", "cell"), P("Avant", "cell"), P("Après", "cell"), P("Points", "cell")]]
+        st = []
+        for i, l in enumerate(c["lignes"], 1):
+            av = f"{l['avant']['gravite']}" + ("" if l["points_avant"] else f" ({l['avant']['verification']})") if l["avant"] else "—"
+            ap = f"{l['apres']['gravite']}" + ("" if l["points_apres"] else f" ({l['apres']['verification']})") if l["apres"] else "absent"
+            lignes.append([Paragraph(escape(l["statut"]), S["cellb"]), P(l["titre"], "cell"), P(av, "cell"), P(ap, "cell"),
+                           P(f"{l['gain']:+d}" if l["gain"] else "0", "cell")])
+            st.append(("BACKGROUND", (0, i), (0, i), COULEURS_STATUT[l["statut"]]))
+        t = _tableau(lignes, [2.8 * cm, 7.6 * cm, 2.3 * cm, 2.3 * cm, 1.5 * cm])
+        t.setStyle(TableStyle(st))
+        h.append(t)
+    else:
+        h.append(P("Aucun constat ne retire de points dans ces deux analyses."))
+    h += [Spacer(1, 0.3 * cm),
+          P("« Points » : points regagnés (+) ou perdus (−) sur le score pour ce constat. Barème : Élevée −20, Moyenne −8, "
+            "Faible −3, Info 0 ; les constats non confirmés et les faux positifs probables ne sont pas comptés. "
+            f"Analyses comparées : {c['avant']['id']} et {c['apres']['id']}.", "petit")]
+
+    chemin.parent.mkdir(parents=True, exist_ok=True)
+    doc = SimpleDocTemplate(str(chemin), pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm,
+                            topMargin=1.8 * cm, bottomMargin=2 * cm,
+                            title="Comparaison avant / après", author="Scanner de vulnérabilités")
+    doc.build(h, onFirstPage=pied, onLaterPages=pied)
+    return chemin

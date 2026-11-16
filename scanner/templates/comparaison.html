@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titre %}Comparaison — {{ c.apres.url }}{% endblock %}
+{% block contenu %}
+<section class="carte">
+  <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start">
+    <div>
+      <h1>Comparaison avant / après</h1>
+      <p class="doux">{{ c.apres.url }}</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a class="bouton" href="/comparer/pdf?avant={{ c.avant.id }}&amp;apres={{ c.apres.id }}">Télécharger le PDF</a>
+      <a class="bouton second" href="/">Retour</a>
+    </div>
+  </div>
+  {% if not c.meme_cible %}
+  <p class="alerte petit">Les deux analyses ne portent pas sur la même adresse ({{ c.avant.url }} et {{ c.apres.url }}) : la comparaison est donnée à titre indicatif.</p>
+  {% endif %}
+</section>
+
+<section class="carte">
+  <div class="duel">
+    <div>
+      <div class="petit doux">Avant — {{ c.avant.date }}</div>
+      <div class="chiffre">{{ c.avant.score }}<span style="font-size:18px">/100</span></div>
+      <div><a href="/scan/{{ c.avant.id }}">{{ c.avant.niveau }}</a></div>
+    </div>
+    <div class="ecart {{ 'plus' if c.ecart > 0 else 'moins' if c.ecart < 0 else '' }}">{{ "%+d"|format(c.ecart) }}</div>
+    <div>
+      <div class="petit doux">Après — {{ c.apres.date }}</div>
+      <div class="chiffre">{{ c.apres.score }}<span style="font-size:18px">/100</span></div>
+      <div><a href="/scan/{{ c.apres.id }}">{{ c.apres.niveau }}</a></div>
+    </div>
+  </div>
+  <p style="margin-top:16px">{{ c.bilan }}</p>
+  <p>{% for s in statuts %}{% if c.comptes[s] %}<span class="statut st-{{ s.split(' ')[0] }}">{{ c.comptes[s] }} {{ s|lower }}</span> {% endif %}{% endfor %}</p>
+</section>
+
+<section class="carte">
+  <h2>Constats qui comptent dans le score</h2>
+  {% if c.lignes %}
+  <table>
+    <tr><th>Statut</th><th>Constat</th><th>Avant</th><th>Après</th><th>Points</th></tr>
+    {% for l in c.lignes %}
+    <tr>
+      <td><span class="statut st-{{ l.statut.split(' ')[0] }}">{{ l.statut }}</span></td>
+      <td>{{ l.titre }}</td>
+      <td>{% if l.avant %}<span class="grav grav-{{ l.avant.gravite }}">{{ l.avant.gravite }}</span>{% if l.points_avant == 0 %}<div class="petit doux">{{ l.avant.verification }}</div>{% endif %}{% else %}<span class="doux">—</span>{% endif %}</td>
+      <td>{% if l.apres %}<span class="grav grav-{{ l.apres.gravite }}">{{ l.apres.gravite }}</span>{% if l.points_apres == 0 %}<div class="petit doux">{{ l.apres.verification }}</div>{% endif %}{% else %}<span class="doux">absent</span>{% endif %}</td>
+      <td>{{ "%+d"|format(l.gain) if l.gain else "0" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p class="petit doux" style="margin-top:12px">« Points » : points regagnés (+) ou perdus (−) sur le score pour ce constat. Les constats en Info, non confirmés ou faux positifs dans les deux analyses ne sont pas listés, car ils ne changent pas le score.</p>
+  {% else %}
+  <p class="doux">Aucun constat ne retire de points dans ces deux analyses.</p>
+  {% endif %}
+</section>
+{% endblock %}

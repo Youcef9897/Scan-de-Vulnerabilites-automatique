@@ -10,8 +10,9 @@ from flask import Flask, abort, jsonify, render_template, request, send_file
 
 from vulnscan import config
 from vulnscan.cible import CibleRefusee, preparer_cible
+from vulnscan.comparaison import STATUTS, comparer
 from vulnscan.constats import GRAVITES
-from vulnscan.rapport_pdf import generer_pdf
+from vulnscan.rapport_pdf import generer_pdf, generer_pdf_comparaison
 from vulnscan.scan import Scan
 
 app = Flask(__name__)
@@ -58,7 +59,7 @@ def historique(limite=10) -> list:
 
 @app.route("/")
 def accueil():
-    return render_template("index.html", historique=historique(),
+    return render_template("index.html", historique=historique(), choix=historique(30),
                            cibles=", ".join(config.CIBLES_AUTORISEES))
 
 
@@ -101,6 +102,27 @@ def rapport_pdf(scan_id):
     generer_pdf(r, chemin)
     return send_file(chemin, as_attachment=True, download_name=f"rapport-scan-{r['id']}.pdf",
                      mimetype="application/pdf")
+
+
+def _comparaison():
+    avant, apres = request.args.get("avant", ""), request.args.get("apres", "")
+    if not avant or not apres or avant == apres:
+        abort(400, "Choisis deux analyses différentes.")
+    return comparer(charger_resultat(avant), charger_resultat(apres))
+
+
+@app.route("/comparer")
+def comparaison():
+    return render_template("comparaison.html", c=_comparaison(), statuts=STATUTS)
+
+
+@app.route("/comparer/pdf")
+def comparaison_pdf():
+    c = _comparaison()
+    nom = f"comparaison-{c['avant']['id']}-{c['apres']['id']}.pdf"
+    chemin = config.DOSSIER_SCANS / c["apres"]["id"] / nom
+    generer_pdf_comparaison(c, chemin)
+    return send_file(chemin, as_attachment=True, download_name=nom, mimetype="application/pdf")
 
 
 if __name__ == "__main__":

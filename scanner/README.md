@@ -29,6 +29,20 @@ Le premier scan réel du site de la VM donnait 64/100, avec deux faux positifs e
 
 Limites connues : le contrôle des chemins utilise une courte liste de noms courants et les liens de la page d'accueil ; un dossier au nom inhabituel doit être ajouté avec `CHEMINS_SUPPLEMENTAIRES`. Les CVE demandent un accès à Internet (les numéros de version sont envoyés à vulners.com).
 
+## Comparaison avant / après (étape S8)
+
+Sur la page d'accueil, « Comparer deux analyses » met côte à côte deux scans déjà enregistrés (aucun outil n'est relancé). Chaque constat qui compte dans le score reçoit un statut :
+
+| Statut | Signification |
+|---|---|
+| Corrigé | présent avant, absent après |
+| Atténué | toujours présent, mais retire moins de points (gravité baissée, ou faux positif probable) |
+| Nouveau | absent avant, présent après |
+| Aggravé | retire plus de points qu'avant |
+| Toujours présent | inchangé |
+
+La page indique l'écart de score et les points regagnés ou perdus par constat ; leur somme redonne l'écart. Elle s'exporte en PDF (`/comparer/pdf`). Un même problème est reconnu même si son titre varie (par exemple le nombre de CVE).
+
 ## Installation (Ubuntu 22.04)
 
 ```bash
@@ -82,6 +96,7 @@ scanner/
 │   ├── constats.py        règles : constats en français, gravité, preuves, recommandations
 │   ├── score.py           score sur 100 et barème
 │   ├── resume.py          résumé exécutif (IA locale ou automatique)
+│   ├── comparaison.py     comparaison de deux analyses (avant / après)
 │   ├── scan.py            déroulement complet d'une analyse
 │   └── rapport_pdf.py     mise en page du rapport PDF
 ├── templates/             pages web

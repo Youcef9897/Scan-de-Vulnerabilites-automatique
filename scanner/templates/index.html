@@ -31,6 +31,22 @@
 </section>
 {% endif %}
 
+{% if choix|length >= 2 %}
+<section class="carte">
+  <h2>Comparer deux analyses</h2>
+  <p class="doux">Mesure l'effet des corrections : ce qui a été corrigé, ce qui reste et ce qui est apparu entre deux analyses du même site.</p>
+  <form action="/comparer" method="get" class="comparer">
+    <label>Avant
+      <select name="avant">{% for h in choix %}<option value="{{ h.id }}" {% if loop.index == 2 %}selected{% endif %}>{{ h.date }} — {{ h.score }}/100 — {{ h.url }}</option>{% endfor %}</select>
+    </label>
+    <label>Après
+      <select name="apres">{% for h in choix %}<option value="{{ h.id }}" {% if loop.first %}selected{% endif %}>{{ h.date }} — {{ h.score }}/100 — {{ h.url }}</option>{% endfor %}</select>
+    </label>
+    <p><button type="submit">Comparer</button></p>
+  </form>
+</section>
+{% endif %}
+
 <script>
 const f = document.getElementById("formulaire"), msg = document.getElementById("message");
 // Affiche un message d'erreur sans interpréter de HTML (évite toute injection de script)
