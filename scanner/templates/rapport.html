@@ -89,6 +89,9 @@
     {% for nom in ("Nmap", "Nikto", "SSLScan") %}
     <tr><td>{{ nom }}</td><td>{{ r.versions[nom] }}</td><td>{{ r.durees[nom] ~ " s" if nom in r.durees else "non lancé" }}</td></tr>
     {% endfor %}
+    {% if r.zap %}
+    <tr><td>ZAP, analyse passive ({{ r.zap.alertes }} alerte(s) retenue(s){% if r.zap.ignorees %}, {{ r.zap.ignorees|length }} d'information ignorée(s){% endif %})</td><td>{{ r.versions["ZAP"] }}</td><td>{{ r.durees["ZAP"] }} s</td></tr>
+    {% endif %}
     <tr><td>Résumé ({{ r.resume_origine }})</td><td>—</td><td>{{ r.durees["Résumé"] }} s</td></tr>
   </table>
   {% if r.chemins and r.chemins.ignore %}<p class="alerte petit" style="margin-top:12px">{{ r.chemins.ignore }}</p>{% endif %}

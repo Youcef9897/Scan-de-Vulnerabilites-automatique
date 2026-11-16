@@ -1,0 +1,524 @@
+{
+ "@programName": "ZAP",
+ "@version": "2.16.1",
+ "@generated": "Mon, 16 Nov 2026 22:30:00",
+ "site": [
+  {
+   "@name": "http://localhost",
+   "@host": "localhost",
+   "@port": "80",
+   "@ssl": "false",
+   "alerts": [
+    {
+     "pluginid": "10020",
+     "alertRef": "10020-1",
+     "alert": "Missing Anti-clickjacking Header",
+     "name": "Missing Anti-clickjacking Header",
+     "riskcode": "2",
+     "confidence": "2",
+     "riskdesc": "Medium (Medium)",
+     "desc": "<p>The response does not protect against 'ClickJacking' attacks.</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/",
+       "method": "GET",
+       "param": "x-frame-options",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      },
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/login.html",
+       "method": "GET",
+       "param": "x-frame-options",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      },
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/produits.html",
+       "method": "GET",
+       "param": "x-frame-options",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      }
+     ],
+     "count": "3",
+     "solution": "<p>Set X-Frame-Options or CSP frame-ancestors.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "1021",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10038",
+     "alertRef": "10038-1",
+     "alert": "Content Security Policy (CSP) Header Not Set",
+     "name": "Content Security Policy (CSP) Header Not Set",
+     "riskcode": "2",
+     "confidence": "3",
+     "riskdesc": "Medium (High)",
+     "desc": "<p>Content Security Policy (CSP) Header Not Set</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/",
+       "method": "GET",
+       "param": "",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      },
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/login.html",
+       "method": "GET",
+       "param": "",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      }
+     ],
+     "count": "2",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "693",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10033",
+     "alertRef": "10033",
+     "alert": "Directory Browsing",
+     "name": "Directory Browsing",
+     "riskcode": "2",
+     "confidence": "2",
+     "riskdesc": "Medium (Medium)",
+     "desc": "<p>Directory Browsing</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/assets/",
+       "method": "GET",
+       "param": "",
+       "attack": "",
+       "evidence": "<title>Index of /mon-site/assets</title>",
+       "otherinfo": ""
+      }
+     ],
+     "count": "1",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "548",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10202",
+     "alertRef": "10202",
+     "alert": "Absence of Anti-CSRF Tokens",
+     "name": "Absence of Anti-CSRF Tokens",
+     "riskcode": "2",
+     "confidence": "1",
+     "riskdesc": "Medium (Low)",
+     "desc": "<p>No Anti-CSRF tokens were found in a HTML submission form.</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/login.html",
+       "method": "GET",
+       "param": "",
+       "attack": "",
+       "evidence": "<form action=\"login.html\" method=\"post\">",
+       "otherinfo": ""
+      }
+     ],
+     "count": "1",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "352",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "99999",
+     "alertRef": "99999",
+     "alert": "Hypothetical New Passive Rule",
+     "name": "Hypothetical New Passive Rule",
+     "riskcode": "2",
+     "confidence": "2",
+     "riskdesc": "Medium (Medium)",
+     "desc": "<p>Fictitious rule used by the tests: it has no French sheet in the platform.</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/contact.html",
+       "method": "GET",
+       "param": "sujet",
+       "attack": "",
+       "evidence": "exemple",
+       "otherinfo": ""
+      }
+     ],
+     "count": "1",
+     "solution": "<p>Review the page by hand.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "200",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10021",
+     "alertRef": "10021",
+     "alert": "X-Content-Type-Options Header Missing",
+     "name": "X-Content-Type-Options Header Missing",
+     "riskcode": "1",
+     "confidence": "2",
+     "riskdesc": "Low (Medium)",
+     "desc": "<p>X-Content-Type-Options Header Missing</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/",
+       "method": "GET",
+       "param": "x-content-type-options",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      },
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/assets/css/style.css",
+       "method": "GET",
+       "param": "x-content-type-options",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      },
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/login.html",
+       "method": "GET",
+       "param": "x-content-type-options",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      },
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/produits.html",
+       "method": "GET",
+       "param": "x-content-type-options",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      },
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/panier.html",
+       "method": "GET",
+       "param": "x-content-type-options",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      },
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/contact.html",
+       "method": "GET",
+       "param": "x-content-type-options",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      }
+     ],
+     "count": "6",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "693",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10036",
+     "alertRef": "10036-2",
+     "alert": "Server Leaks Version Information via \"Server\" HTTP Response Header Field",
+     "name": "Server Leaks Version Information via \"Server\" HTTP Response Header Field",
+     "riskcode": "1",
+     "confidence": "3",
+     "riskdesc": "Low (High)",
+     "desc": "<p>Server Leaks Version Information via \"Server\" HTTP Response Header Field</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/",
+       "method": "GET",
+       "param": "",
+       "attack": "",
+       "evidence": "Apache/2.4.52 (Ubuntu)",
+       "otherinfo": ""
+      }
+     ],
+     "count": "1",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "497",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10010",
+     "alertRef": "10010",
+     "alert": "Cookie No HttpOnly Flag",
+     "name": "Cookie No HttpOnly Flag",
+     "riskcode": "1",
+     "confidence": "2",
+     "riskdesc": "Low (Medium)",
+     "desc": "<p>Cookie No HttpOnly Flag</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/login.html",
+       "method": "GET",
+       "param": "PHPSESSID",
+       "attack": "",
+       "evidence": "Set-Cookie: PHPSESSID",
+       "otherinfo": ""
+      },
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/panier.html",
+       "method": "GET",
+       "param": "panier",
+       "attack": "",
+       "evidence": "Set-Cookie: panier",
+       "otherinfo": ""
+      }
+     ],
+     "count": "2",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "1004",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10054",
+     "alertRef": "10054-1",
+     "alert": "Cookie without SameSite Attribute",
+     "name": "Cookie without SameSite Attribute",
+     "riskcode": "1",
+     "confidence": "2",
+     "riskdesc": "Low (Medium)",
+     "desc": "<p>Cookie without SameSite Attribute</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/login.html",
+       "method": "GET",
+       "param": "PHPSESSID",
+       "attack": "",
+       "evidence": "Set-Cookie: PHPSESSID",
+       "otherinfo": ""
+      }
+     ],
+     "count": "1",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "1275",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10096",
+     "alertRef": "10096",
+     "alert": "Timestamp Disclosure - Unix",
+     "name": "Timestamp Disclosure - Unix",
+     "riskcode": "1",
+     "confidence": "1",
+     "riskdesc": "Low (Low)",
+     "desc": "<p>Timestamp Disclosure - Unix</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/assets/css/style.css",
+       "method": "GET",
+       "param": "",
+       "attack": "",
+       "evidence": "1731798000",
+       "otherinfo": ""
+      }
+     ],
+     "count": "1",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "497",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10027",
+     "alertRef": "10027",
+     "alert": "Information Disclosure - Suspicious Comments",
+     "name": "Information Disclosure - Suspicious Comments",
+     "riskcode": "0",
+     "confidence": "1",
+     "riskdesc": "Informational (Low)",
+     "desc": "<p>Information Disclosure - Suspicious Comments</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/login.html",
+       "method": "GET",
+       "param": "",
+       "attack": "",
+       "evidence": "TODO",
+       "otherinfo": ""
+      }
+     ],
+     "count": "1",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "615",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10109",
+     "alertRef": "10109",
+     "alert": "Modern Web Application",
+     "name": "Modern Web Application",
+     "riskcode": "0",
+     "confidence": "2",
+     "riskdesc": "Informational (Medium)",
+     "desc": "<p>Modern Web Application</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/",
+       "method": "GET",
+       "param": "",
+       "attack": "",
+       "evidence": "<script>",
+       "otherinfo": ""
+      }
+     ],
+     "count": "1",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "0",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10015",
+     "alertRef": "10015",
+     "alert": "Re-examine Cache-control Directives",
+     "name": "Re-examine Cache-control Directives",
+     "riskcode": "0",
+     "confidence": "0",
+     "riskdesc": "Informational (False Positive)",
+     "desc": "<p>Re-examine Cache-control Directives</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "http://localhost/mon-site/",
+       "method": "GET",
+       "param": "cache-control",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      }
+     ],
+     "count": "1",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "525",
+     "wascid": "15",
+     "sourceid": "1"
+    }
+   ]
+  },
+  {
+   "@name": "https://fonts.googleapis.com",
+   "@host": "fonts.googleapis.com",
+   "@port": "443",
+   "@ssl": "true",
+   "alerts": [
+    {
+     "pluginid": "10021",
+     "alertRef": "10021",
+     "alert": "X-Content-Type-Options Header Missing",
+     "name": "X-Content-Type-Options Header Missing",
+     "riskcode": "1",
+     "confidence": "2",
+     "riskdesc": "Low (Medium)",
+     "desc": "<p>X-Content-Type-Options Header Missing</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "https://fonts.googleapis.com/css2?family=Inter",
+       "method": "GET",
+       "param": "x-content-type-options",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      }
+     ],
+     "count": "1",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "693",
+     "wascid": "15",
+     "sourceid": "1"
+    },
+    {
+     "pluginid": "10035",
+     "alertRef": "10035-1",
+     "alert": "Strict-Transport-Security Header Not Set",
+     "name": "Strict-Transport-Security Header Not Set",
+     "riskcode": "1",
+     "confidence": "3",
+     "riskdesc": "Low (High)",
+     "desc": "<p>Strict-Transport-Security Header Not Set</p>",
+     "instances": [
+      {
+       "id": "1",
+       "uri": "https://fonts.googleapis.com/css2?family=Inter",
+       "method": "GET",
+       "param": "",
+       "attack": "",
+       "evidence": "",
+       "otherinfo": ""
+      }
+     ],
+     "count": "1",
+     "solution": "<p>See the ZAP documentation.</p>",
+     "otherinfo": "",
+     "reference": "<p>https://www.zaproxy.org/docs/alerts/</p>",
+     "cweid": "319",
+     "wascid": "15",
+     "sourceid": "1"
+    }
+   ]
+  }
+ ]
+}

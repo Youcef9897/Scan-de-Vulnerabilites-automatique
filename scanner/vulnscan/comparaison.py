@@ -79,9 +79,11 @@ def comparer(premier: dict, second: dict) -> dict:
     compte = {s: sum(1 for l in lignes if l["statut"] == s) for s in STATUTS}
     ecart = apres["score"]["score"] - avant["score"]["score"]
     meme_cible = avant["cible"]["url"] == apres["cible"]["url"]
+    # ZAP ajoute des constats : comparer une analyse avec ZAP à une analyse sans ZAP fausse l'écart.
+    memes_outils = bool(avant.get("zap")) == bool(apres.get("zap"))
     return {
         "avant": _resume(avant), "apres": _resume(apres), "ecart": ecart,
-        "meme_cible": meme_cible, "lignes": lignes, "comptes": compte,
+        "meme_cible": meme_cible, "memes_outils": memes_outils, "lignes": lignes, "comptes": compte,
         "bilan": _bilan(avant["score"]["score"], apres["score"]["score"], ecart, compte),
     }
 

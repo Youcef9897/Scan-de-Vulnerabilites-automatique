@@ -7,7 +7,7 @@ import time
 import uuid
 
 from . import (analyse, chemins as mod_chemins, config, constats as mod_constats, ecoute, outils, resume,
-               score as mod_score, verification)
+               score as mod_score, verification, zap as mod_zap)
 
 
 class Scan:
@@ -65,6 +65,13 @@ class Scan:
             durees["Chemins sensibles"] = round(time.time() - tc, 1)
         ecoutes = ecoute.ecoutes_locales() if self.cible.est_locale else None
 
+        # ZAP passif (facultatif) : lancé en même temps que les autres outils, car il est le plus long.
+        res_zap, fil_zap = {}, None
+        if config.ZAP_ACTIF and obs.get("accessible"):
+            fil_zap = threading.Thread(target=lambda: res_zap.update(r=mod_zap.lancer(self.cible, self.dossier)),
+                                       daemon=True)
+            fil_zap.start()
+
         self._maj(10, "Nmap, Nikto et SSLScan lancés en parallèle…")
         termines = []
 
@@ -73,6 +80,16 @@ class Scan:
             self._maj(10 + 22 * len(termines), f"{nom} terminé en {res.duree} s")
 
         res_outils = outils.lancer_tous(self.cible, self.dossier, suivi)
+        rapport_zap = None
+        if fil_zap:
+            self._maj(78, "ZAP explore les pages du site (analyse passive)…")
+            fil_zap.join()
+            res_outils["ZAP"] = res_zap.get("r") or outils.ResultatOutil(
+                nom="ZAP", commande="zap", erreur="ZAP s'est arrêté sans résultat.")
+            if not res_outils["ZAP"].erreur:
+                rapport_zap = mod_zap.lire_rapport(self.dossier / mod_zap.NOM_RAPPORT, self.cible)
+                if rapport_zap["erreur"]:
+                    res_outils["ZAP"].erreur, rapport_zap = rapport_zap["erreur"], None
         for nom, r in res_outils.items():
             if r.commande != "(non lancé)":
                 durees[nom] = r.duree
@@ -81,7 +98,8 @@ class Scan:
         ports = analyse.lire_nmap_xml(self.dossier / "nmap.xml")
         nikto = analyse.lire_nikto(res_outils["Nikto"].sortie)
         ssl = analyse.lire_sslscan(res_outils["SSLScan"].sortie)
-        liste = mod_constats.construire(self.cible, ports, nikto, ssl, obs, ecoutes, ch)
+        liste = mod_constats.construire(self.cible, ports, nikto, ssl, obs, ecoutes, ch,
+                                        rapport_zap["alertes"] if rapport_zap else None)
         sc = mod_score.calculer(liste)
 
         self._maj(85, "Rédaction du résumé…")
@@ -96,7 +114,10 @@ class Scan:
                       "port": self.cible.port, "locale": self.cible.est_locale},
             "date": self.debut.strftime("%d/%m/%Y à %H:%M"),
             "durees": durees,
-            "versions": outils.versions_outils(),
+            "versions": {**outils.versions_outils(),
+                         **({"ZAP": f"ZAP {rapport_zap['version']}".strip()} if rapport_zap else {})},
+            "zap": ({"alertes": len(rapport_zap["alertes"]), "ignorees": rapport_zap["ignorees"],
+                     "hors_site": rapport_zap["hors_site"]} if rapport_zap else None),
             "commandes": {**{n: r.commande for n, r in res_outils.items()},
                           **({"Chemins sensibles": f"{ch['requetes']} requête(s) GET sous l'adresse analysée"} if ch else {})},
             "chemins": ({"requetes": ch["requetes"], "ignore": ch["ignore"]} if ch else None),

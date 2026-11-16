@@ -15,6 +15,9 @@
   {% if not c.meme_cible %}
   <p class="alerte petit">Les deux analyses ne portent pas sur la même adresse ({{ c.avant.url }} et {{ c.apres.url }}) : la comparaison est donnée à titre indicatif.</p>
   {% endif %}
+  {% if not c.memes_outils %}
+  <p class="alerte petit">Une seule des deux analyses a utilisé ZAP : elle contient des constats que l'autre ne pouvait pas trouver. Pour un écart fiable, compare deux analyses faites avec les mêmes outils.</p>
+  {% endif %}
 </section>
 
 <section class="carte">

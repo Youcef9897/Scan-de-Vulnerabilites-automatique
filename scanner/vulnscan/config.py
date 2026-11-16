@@ -44,6 +44,16 @@ CHEMINS_SUPPLEMENTAIRES = [
     if c.strip()
 ]
 
+# ZAP en mode passif (exploration des pages et lecture des réponses, aucune attaque) : ZAP_ACTIF=1 pour l'activer.
+# Désactivé par défaut : ZAP doit être installé à part et allonge l'analyse d'une à deux minutes.
+ZAP_ACTIF = os.environ.get("ZAP_ACTIF", "0") == "1"
+ZAP_COMMANDE = os.environ.get("ZAP_COMMANDE", "")          # vide : zaproxy, zap.sh ou owasp-zap, le premier trouvé
+ZAP_DOSSIER = Path(os.environ.get("ZAP_DOSSIER", DOSSIER_BASE / ".zap"))   # dossier de travail de ZAP
+ZAP_PORT = int(os.environ.get("ZAP_PORT", "8090"))         # port local de ZAP (127.0.0.1 uniquement)
+ZAP_DUREE_EXPLORATION = int(os.environ.get("ZAP_DUREE_EXPLORATION", "1"))  # exploration des pages, en minutes
+ZAP_PROFONDEUR = int(os.environ.get("ZAP_PROFONDEUR", "3"))
+DUREE_MAX_ZAP = int(os.environ.get("DUREE_MAX_ZAP", "300"))
+
 # Résumé rédigé par l'IA locale (Ollama). IA_ACTIVE=0 pour s'en passer.
 IA_ACTIVE = os.environ.get("IA_ACTIVE", "1") == "1"
 IA_URL = os.environ.get("IA_URL", "http://localhost:11434/api/generate")

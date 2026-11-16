@@ -149,6 +149,8 @@ def generer_pdf(r: dict, chemin: Path):
             "Un contrôle des chemins sensibles (listage de dossiers, copies de sauvegarde, code source) est fait par des "
             "requêtes GET, en nombre limité, sous l'adresse analysée. Quand la cible est la machine elle-même, "
             "l'adresse d'écoute de chaque service est lue avec la commande ss. "
+            + ("ZAP a exploré les pages du site en mode passif : il lit les réponses, sans lancer d'attaque "
+               "et sans envoyer de formulaire POST. " if r.get("zap") else "") +
             "Chaque constat est ensuite vérifié par des requêtes HTTP de lecture (GET, OPTIONS, TRACE, DEBUG) : "
             "un constat est « Confirmé » s'il est reproduit, « Non confirmé » s'il ne l'est pas, "
             "« Faux positif probable » si la vérification le contredit, et « À vérifier » s'il demande un contrôle manuel.")]
@@ -160,6 +162,9 @@ def generer_pdf(r: dict, chemin: Path):
     for nom in ("Nmap", "Nikto", "SSLScan"):
         lm.append([P(nom, "cell"), P(r["versions"].get(nom, ""), "cell"),
                    P(f"{r['durees'][nom]} s" if nom in r["durees"] else "non lancé", "cell")])
+    if r.get("zap"):
+        lm.append([P(f"ZAP, analyse passive ({r['zap']['alertes']} alerte(s) retenue(s))", "cell"),
+                   P(r["versions"].get("ZAP", ""), "cell"), P(f"{r['durees'].get('ZAP', '—')} s", "cell")])
     lm.append([P(f"Résumé ({r['resume_origine']})", "cell"), P("—", "cell"), P(f"{r['durees'].get('Résumé', '—')} s", "cell")])
     lm.append([P("Total", "cell"), P("", "cell"), P(f"{r['durees'].get('Total', '—')} s", "cell")])
     h.append(_tableau(lm, [5 * cm, 8.5 * cm, 3 * cm]))
@@ -202,6 +207,8 @@ def generer_pdf_comparaison(c: dict, chemin: Path):
         h += [P(f"Attention : les deux analyses ne portent pas sur la même adresse ({c['avant']['url']}).", "petit")]
     centre = ParagraphStyle("ce", parent=S["petit"], alignment=TA_CENTER)
     niveau = ParagraphStyle("ni", parent=S["h2"], alignment=TA_CENTER)
+    if not c.get("memes_outils", True):
+        h += [P("Attention : une seule des deux analyses a utilisé ZAP ; l'écart de score n'est pas directement comparable.", "petit")]
     signe = f"{c['ecart']:+d}"
     couleur_ecart = "#15803d" if c["ecart"] > 0 else "#b42318" if c["ecart"] < 0 else "#5b6878"
     duel = Table([[Paragraph(escape(f"Avant — {c['avant']['date']}"), centre), "",

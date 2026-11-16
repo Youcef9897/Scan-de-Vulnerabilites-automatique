@@ -516,11 +516,99 @@ def constats_tls(ssl, obs) -> list:
     return r
 
 
+# ---------------------------------------------------------------- ZAP passif (étape S4-B)
+
+def _preuves_zap(alerte, limite=5) -> list:
+    lignes = []
+    for i in alerte["instances"][:limite]:
+        detail = "; ".join(x for x in ((f"paramètre : {i['param']}" if i["param"] else ""),
+                                       (f"preuve : {i['preuve']}" if i["preuve"] else "")) if x)
+        lignes.append(f"ZAP : {alerte['nom']} — {i['methode']} {i['uri']}" + (f" ({detail})" if detail else ""))
+    reste = len(alerte["instances"]) - limite
+    if reste > 0:
+        lignes.append(f"ZAP : … et {reste} autre(s) page(s)")
+    return lignes
+
+
+def _completer(existant, alerte):
+    """ZAP a vu un problème déjà trouvé par la plateforme : il ajoute sa preuve, sans second constat."""
+    if "ZAP" not in existant.sources:
+        existant.sources.append("ZAP")
+    pages = sorted({i["uri"] for i in alerte["instances"]})
+    existant.preuves.append(f"ZAP : {alerte['nom']} — vu sur {len(pages)} page(s) : " + ", ".join(pages[:3])
+                            + (" …" if len(pages) > 3 else ""))
+
+
+def _gravite_zap(fiche, alerte) -> tuple:
+    """Gravité et état de vérification d'un constat qui ne vient que de ZAP."""
+    from .zap import CONFIANCE_FAIBLE, RISQUES
+    gravite = (fiche or {}).get("gravite") or RISQUES[alerte["risque"]]
+    sure = alerte["confiance"] > CONFIANCE_FAIBLE
+    if fiche and fiche["factuel"] and sure:
+        return gravite, CONFIRME
+    if not sure or fiche is None:
+        gravite = _baisser(gravite)        # indice peu sûr, ou règle sans fiche : un cran en dessous
+    return gravite, NON_VERIFIABLE
+
+
+def constats_zap(alertes, existants) -> list:
+    """Constats tirés des alertes passives de ZAP, sans doublon avec `existants` (complétés sur place)."""
+    from .regles_zap import fiche as fiche_de
+    nouveaux = []
+
+    def chercher(motif):
+        return next((c for c in existants + nouveaux if re.search(motif, c.titre, re.I)), None)
+
+    for a in alertes:
+        f = fiche_de(a)
+        if f and f["par_cookie"]:
+            par_nom = {}
+            for i in a["instances"]:
+                par_nom.setdefault(i["param"] or "?", []).append(i)
+            for nom, instances in par_nom.items():
+                partie = {**a, "instances": instances}
+                deja = chercher(rf"^cookie « {re.escape(nom)} »")
+                if deja:
+                    _completer(deja, partie)
+                    continue
+                gravite, etat = _gravite_zap(f, partie)
+                nouveaux.append(Constat(
+                    titre=f"Cookie « {nom} » {f['titre']} (vu par ZAP)", gravite=gravite, categorie=f["categorie"],
+                    description=f["description"] + " ZAP l'a vu sur une autre page que celle analysée directement.",
+                    recommandation=f["recommandation"], preuves=_preuves_zap(partie), sources=["ZAP"],
+                    verification=etat, reference=f["reference"]))
+            continue
+        if f:
+            deja = chercher(f["doublon"]) if f["doublon"] else None
+            deja = deja or next((c for c in nouveaux if c.titre == f["titre"]), None)
+            if deja:
+                _completer(deja, a)
+                continue
+            gravite, etat = _gravite_zap(f, a)
+            nouveaux.append(Constat(
+                titre=f["titre"], gravite=gravite, categorie=f["categorie"], description=f["description"],
+                recommandation=f["recommandation"], preuves=_preuves_zap(a), sources=["ZAP"],
+                verification=etat, reference=f["reference"]))
+            continue
+        gravite, etat = _gravite_zap(None, a)
+        nouveaux.append(Constat(
+            titre=f"ZAP : {a['nom']}", gravite=gravite, categorie="À examiner",
+            description="ZAP a signalé cette alerte, qui n'a pas encore de fiche en français dans la plateforme : "
+                        "elle doit être lue et vérifiée à la main. Description d'origine (en anglais) : "
+                        + (a["description"][:400] or "non fournie."),
+            recommandation="Conseil de ZAP (en anglais) : " + (a["solution"][:400] or "non fourni."),
+            preuves=_preuves_zap(a), sources=["ZAP"], verification=etat,
+            reference=(f"CWE-{a['cwe']} — " if a["cwe"] > 0 else "") + f"règle ZAP {a['ref']}"))
+    return nouveaux
+
+
 # ---------------------------------------------------------------- Assemblage
 
-def construire(cible, ports, nikto, ssl, obs, ecoutes=None, chemins=None) -> list:
+def construire(cible, ports, nikto, ssl, obs, ecoutes=None, chemins=None, zap=None) -> list:
     tous = (constats_reseau(cible, ports, ecoutes) + constats_cve(ports, ecoutes, cible) + constats_chemins(chemins)
             + constats_web(cible, nikto, obs, ports) + constats_tls(ssl, obs))
+    if zap:
+        tous += constats_zap(zap, tous)
     # Un listage vu à la fois par notre contrôle et par Nikto ne fait qu'un seul constat.
     listages = [c for c in tous if c.titre == TITRE_LISTAGE]
     if len(listages) > 1:

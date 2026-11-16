@@ -29,6 +29,27 @@ Le premier scan réel du site de la VM donnait 64/100, avec deux faux positifs e
 
 Limites connues : le contrôle des chemins utilise une courte liste de noms courants et les liens de la page d'accueil ; un dossier au nom inhabituel doit être ajouté avec `CHEMINS_SUPPLEMENTAIRES`. Les CVE demandent un accès à Internet (les numéros de version sont envoyés à vulners.com).
 
+## ZAP en mode passif (étape S4-B, facultatif)
+
+ZAP est désactivé par défaut. Avec `ZAP_ACTIF=1`, la plateforme lance ZAP en même temps que les autres outils :
+il parcourt les pages du site (liens et formulaires GET) et lit les réponses. Il ne lance **aucune attaque**
+(pas de tâche `activeScan`) et n'envoie **aucun formulaire POST**. Il reste dans le dossier analysé et n'écoute
+que sur 127.0.0.1.
+
+| Élément | Rôle |
+|---|---|
+| `zap.py` | Écrit le plan d'analyse (`zap-plan.yaml`), lance `zaproxy -cmd -autorun`, lit le rapport JSON (`zap.json`). |
+| `regles_zap.py` | Fiches en français des alertes passives de ZAP : titre, gravité, description, recommandation. |
+| Pas de doublon | Si ZAP signale un problème déjà trouvé par la plateforme (clickjacking, CSP, cookie…), il ajoute sa preuve au constat existant, sans en créer un second ni changer le score. |
+| Constats nouveaux | Ce que seul ZAP voit, car il visite toutes les pages : formulaire sans jeton anti-CSRF, cookie posé par une autre page, message d'erreur affiché, bibliothèque JavaScript vulnérable… |
+| Prudence | Une alerte peu sûre pour ZAP, ou sans fiche en français, est classée « À vérifier » un cran en dessous. Les alertes de simple information et les faux positifs de ZAP sont écartés. |
+
+Installation de ZAP (à part) : `sudo snap install zaproxy --classic`. Lancement : `ZAP_ACTIF=1 python3 app.py`.
+
+État : la lecture du rapport et les constats sont testés avec un exemple de rapport au format de ZAP.
+Le lancement réel de ZAP reste à valider dans la VM (deuxième partie de l'étape).
+Une analyse avec ZAP contient plus de constats : la page de comparaison le signale si une seule des deux analyses a utilisé ZAP.
+
 ## Comparaison avant / après (étape S8)
 
 Sur la page d'accueil, « Comparer deux analyses » met côte à côte deux scans déjà enregistrés (aucun outil n'est relancé). Chaque constat qui compte dans le score reçoit un statut :
@@ -72,6 +93,9 @@ Ils se changent au lancement, sans modifier le code :
 | `IA_MODELE` | Modèle Ollama | `mistral` |
 | `IA_DUREE_MAX` | Délai maximal de l'IA, en secondes | `120` |
 | `DUREE_MAX_NIKTO` | Durée maximale de Nikto, en secondes | `240` |
+| `ZAP_ACTIF` | `1` pour ajouter l'analyse passive de ZAP | `0` |
+| `ZAP_DUREE_EXPLORATION` | Durée maximale de l'exploration des pages par ZAP, en minutes | `1` |
+| `DUREE_MAX_ZAP` | Durée maximale de ZAP, en secondes | `300` |
 | `NMAP_PORTS` | Ports vérifiés par Nmap | `21,22,23,25,80,443,631,3306,3389,5432,8080,8443` |
 | `CVE_ACTIVE` | `0` pour ne pas chercher les CVE (aucun envoi à vulners.com) | `1` |
 | `CHEMINS_ACTIFS` | `0` pour désactiver le contrôle des chemins sensibles | `1` |
@@ -93,6 +117,8 @@ scanner/
 │   ├── verification.py    vérification directe par requêtes HTTP de lecture
 │   ├── chemins.py         contrôle des chemins sensibles (listage, sauvegardes, code source)
 │   ├── ecoute.py          adresse d'écoute réelle des services locaux (ss)
+│   ├── zap.py             ZAP en mode passif : plan, lancement, lecture du rapport JSON
+│   ├── regles_zap.py      fiches en français des alertes de ZAP
 │   ├── constats.py        règles : constats en français, gravité, preuves, recommandations
 │   ├── score.py           score sur 100 et barème
 │   ├── resume.py          résumé exécutif (IA locale ou automatique)
