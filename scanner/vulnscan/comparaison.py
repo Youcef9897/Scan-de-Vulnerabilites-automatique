@@ -12,7 +12,23 @@ ATTENUE = "Atténué"
 AGGRAVE = "Aggravé"
 NOUVEAU = "Nouveau"
 INCHANGE = "Toujours présent"
-STATUTS = [CORRIGE, ATTENUE, NOUVEAU, AGGRAVE, INCHANGE]
+PLUS_VERIFIABLE = "Plus vérifiable"
+STATUTS = [CORRIGE, ATTENUE, PLUS_VERIFIABLE, NOUVEAU, AGGRAVE, INCHANGE]
+
+_CVE_DU_PORT = re.compile(r"CVE connue\(s\) pour .* \(port (\d+)\)$")
+
+
+def _version_masquee(constat: dict, apres: dict) -> bool:
+    """Vrai si un constat de CVE a disparu parce que le service ne montre plus son numéro de version.
+
+    Les CVE sont cherchées à partir du numéro de version : s'il n'est plus affiché, le scanner ne peut plus rien
+    dire. Le logiciel n'a pas forcément été mis à jour : ce n'est pas une correction prouvée.
+    """
+    m = _CVE_DU_PORT.search(constat.get("titre", ""))
+    if not m:
+        return False
+    port = next((p for p in apres.get("ports") or [] if str(p.get("numero")) == m.group(1)), None)
+    return bool(port) and port.get("etat") == "open" and not re.search(r"\d", port.get("version") or "")
 
 
 def points(c: dict) -> int:
@@ -56,7 +72,9 @@ def comparer(premier: dict, second: dict) -> dict:
         pa, pb = (points(ca) if ca else 0), (points(cb) if cb else 0)
         if pa == 0 and pb == 0:
             continue                       # sans effet sur le score dans les deux analyses
-        if cb is None or pb == 0:
+        if cb is None and _version_masquee(ca, apres):
+            statut = PLUS_VERIFIABLE
+        elif cb is None or pb == 0:
             statut = CORRIGE if cb is None else ATTENUE
         elif ca is None or pa == 0:
             statut = NOUVEAU
@@ -84,6 +102,9 @@ def comparer(premier: dict, second: dict) -> dict:
     return {
         "avant": _resume(avant), "apres": _resume(apres), "ecart": ecart,
         "meme_cible": meme_cible, "memes_outils": memes_outils, "lignes": lignes, "comptes": compte,
+        "note_version": ("« Plus vérifiable » : le service n'affiche plus son numéro de version, donc ses CVE ne peuvent "
+                         "plus être cherchées. Les points sont regagnés, mais ce n'est pas la preuve d'une mise à jour : "
+                         "mettre le paquet à jour reste nécessaire.") if compte[PLUS_VERIFIABLE] else "",
         "bilan": _bilan(avant["score"]["score"], apres["score"]["score"], ecart, compte),
     }
 
@@ -93,6 +114,8 @@ def _bilan(sa, sb, ecart, compte) -> str:
     morceaux = [f"{compte[CORRIGE]} constat(s) corrigé(s)"]
     if compte[ATTENUE]:
         morceaux.append(f"{compte[ATTENUE]} atténué(s)")
+    if compte[PLUS_VERIFIABLE]:
+        morceaux.append(f"{compte[PLUS_VERIFIABLE]} plus vérifiable(s)")
     morceaux.append(f"{compte[NOUVEAU]} nouveau(x)")
     if compte[AGGRAVE]:
         morceaux.append(f"{compte[AGGRAVE]} aggravé(s)")

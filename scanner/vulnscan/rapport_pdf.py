@@ -185,6 +185,7 @@ def generer_pdf(r: dict, chemin: Path):
 
 
 COULEURS_STATUT = {"Corrigé": colors.HexColor("#15803d"), "Atténué": colors.HexColor("#0f5e8a"),
+                   "Plus vérifiable": colors.HexColor("#8a5a00"),
                    "Nouveau": colors.HexColor("#b42318"), "Aggravé": colors.HexColor("#b42318"),
                    "Toujours présent": GRIS}
 
@@ -240,6 +241,8 @@ def generer_pdf_comparaison(c: dict, chemin: Path):
         h.append(t)
     else:
         h.append(P("Aucun constat ne retire de points dans ces deux analyses."))
+    if c.get("note_version"):
+        h += [Spacer(1, 0.2 * cm), P(c["note_version"], "petit")]
     h += [Spacer(1, 0.3 * cm),
           P("« Points » : points regagnés (+) ou perdus (−) sur le score pour ce constat. Barème : Élevée −20, Moyenne −8, "
             "Faible −3, Info 0 ; les constats non confirmés et les faux positifs probables ne sont pas comptés. "

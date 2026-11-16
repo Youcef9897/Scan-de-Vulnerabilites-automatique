@@ -53,6 +53,7 @@
     </tr>
     {% endfor %}
   </table>
+  {% if c.note_version %}<p class="alerte petit" style="margin-top:12px">{{ c.note_version }}</p>{% endif %}
   <p class="petit doux" style="margin-top:12px">« Points » : points regagnés (+) ou perdus (−) sur le score pour ce constat. Les constats en Info, non confirmés ou faux positifs dans les deux analyses ne sont pas listés, car ils ne changent pas le score.</p>
   {% else %}
   <p class="doux">Aucun constat ne retire de points dans ces deux analyses.</p>

@@ -57,7 +57,8 @@ def test_statut_de_chaque_constat():
     assert statuts["Méthode TRACE activée"] == "Nouveau"
     # L'ETag est en Info dans les deux : il ne change pas le score, il n'est pas listé
     assert not any("etag" in t.lower() for t in statuts)
-    assert c["comptes"] == {"Corrigé": 6, "Atténué": 0, "Nouveau": 1, "Aggravé": 0, "Toujours présent": 2}
+    assert c["comptes"] == {"Corrigé": 6, "Atténué": 0, "Plus vérifiable": 0, "Nouveau": 1, "Aggravé": 0,
+                            "Toujours présent": 2}
 
 
 def test_ecart_et_bilan():
@@ -79,6 +80,24 @@ def test_passage_en_faux_positif_est_une_attenuation():
     b = _resultat("20261117-000000-x-0002", [_c("C01", "Méthode TRACE activée", "Faible", "Faux positif probable")])
     l = comparer(a, b)["lignes"][0]
     assert l["statut"] == "Atténué" and l["gain"] == 3 and points(b["constats"][0]) == 0
+
+
+def test_cve_disparues_avec_la_version_masquee_ne_sont_pas_dites_corrigees():
+    """Cas réel du 16/11 : après « ServerTokens Prod », Nmap ne lit plus la version d'Apache, donc plus de CVE."""
+    cve = _c("C05", "85 CVE connue(s) pour Apache httpd 2.4.52 (Ubuntu) (port 80)", "Moyenne", "À vérifier")
+    avant = _resultat("20261116-220036-localhost-8933", [cve])
+
+    def apres(port):
+        return {**_resultat("20261116-232825-localhost-0f75", []), "ports": [port] if port else []}
+
+    masque = comparer(avant, apres({"numero": 80, "etat": "open", "version": "Apache httpd"}))
+    assert masque["lignes"][0]["statut"] == "Plus vérifiable" and masque["lignes"][0]["gain"] == 8
+    assert "1 plus vérifiable(s)" in masque["bilan"] and "pas la preuve d'une mise à jour" in masque["note_version"]
+    # Version toujours lisible et plus de CVE (paquet mis à jour), ou port fermé : c'est bien une correction
+    a_jour = comparer(avant, apres({"numero": 80, "etat": "open", "version": "Apache httpd 2.4.62 (Ubuntu)"}))
+    ferme = comparer(avant, apres({"numero": 80, "etat": "closed", "version": ""}))
+    assert a_jour["lignes"][0]["statut"] == ferme["lignes"][0]["statut"] == "Corrigé"
+    assert a_jour["note_version"] == "" and comparer(avant, apres(None))["lignes"][0]["statut"] == "Corrigé"
 
 
 def test_cibles_differentes_signalees():
