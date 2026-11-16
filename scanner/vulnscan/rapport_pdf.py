@@ -146,11 +146,17 @@ def generer_pdf(r: dict, chemin: Path):
         h.append(P("Aucun résultat Nmap."))
     h += [Paragraph("5. Méthodologie", S["h1"]),
           P("Les outils Nmap, Nikto et SSLScan sont lancés en parallèle avec une durée maximale. "
+            "Un contrôle des chemins sensibles (listage de dossiers, copies de sauvegarde, code source) est fait par des "
+            "requêtes GET, en nombre limité, sous l'adresse analysée. Quand la cible est la machine elle-même, "
+            "l'adresse d'écoute de chaque service est lue avec la commande ss. "
             "Chaque constat est ensuite vérifié par des requêtes HTTP de lecture (GET, OPTIONS, TRACE, DEBUG) : "
             "un constat est « Confirmé » s'il est reproduit, « Non confirmé » s'il ne l'est pas, "
             "« Faux positif probable » si la vérification le contredit, et « À vérifier » s'il demande un contrôle manuel.")]
     lm = [[P("Étape", "cell"), P("Version", "cell"), P("Durée", "cell")],
           [P("Vérification directe", "cell"), P("—", "cell"), P(f"{r['durees'].get('Vérification directe', '—')} s", "cell")]]
+    if r.get("chemins"):
+        lm.append([P(f"Contrôle des chemins sensibles ({r['chemins']['requetes']} requêtes GET)", "cell"), P("—", "cell"),
+                   P(f"{r['durees'].get('Chemins sensibles', '—')} s", "cell")])
     for nom in ("Nmap", "Nikto", "SSLScan"):
         lm.append([P(nom, "cell"), P(r["versions"].get(nom, ""), "cell"),
                    P(f"{r['durees'][nom]} s" if nom in r["durees"] else "non lancé", "cell")])

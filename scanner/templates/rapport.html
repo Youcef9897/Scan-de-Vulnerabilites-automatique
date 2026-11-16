@@ -13,7 +13,11 @@
     </div>
   </div>
   {% if r.cible.locale %}
+  {% if r.ecoute_locale_lue %}
+  <p class="alerte petit">Analyse lancée depuis la machine qui héberge le site : pour chaque port ouvert, l'adresse d'écoute réelle est lue sur la machine (commande ss). Un service qui n'écoute que sur 127.0.0.1 n'est pas joignable depuis le réseau et ne retire aucun point.</p>
+  {% else %}
   <p class="alerte petit">Analyse lancée depuis la machine qui héberge le site : les ports ouverts sont marqués « À vérifier », car ils ne sont peut-être pas accessibles depuis le réseau.</p>
+  {% endif %}
   {% endif %}
   {% for nom, err in r.erreurs_outils.items() %}{% if nom != "SSLScan" or r.cible.url.startswith("https") %}
   <p class="alerte erreur petit">{{ nom }} : {{ err }}</p>{% endif %}{% endfor %}
@@ -79,11 +83,15 @@
   <table>
     <tr><th>Étape</th><th>Version</th><th>Durée</th></tr>
     <tr><td>Vérification directe (requêtes HTTP)</td><td>—</td><td>{{ r.durees["Vérification directe"] }} s</td></tr>
+    {% if r.chemins %}
+    <tr><td>Contrôle des chemins sensibles ({{ r.chemins.requetes }} requêtes GET)</td><td>—</td><td>{{ r.durees["Chemins sensibles"] }} s</td></tr>
+    {% endif %}
     {% for nom in ("Nmap", "Nikto", "SSLScan") %}
     <tr><td>{{ nom }}</td><td>{{ r.versions[nom] }}</td><td>{{ r.durees[nom] ~ " s" if nom in r.durees else "non lancé" }}</td></tr>
     {% endfor %}
     <tr><td>Résumé ({{ r.resume_origine }})</td><td>—</td><td>{{ r.durees["Résumé"] }} s</td></tr>
   </table>
+  {% if r.chemins and r.chemins.ignore %}<p class="alerte petit" style="margin-top:12px">{{ r.chemins.ignore }}</p>{% endif %}
   <p class="petit doux" style="margin-top:12px">{{ r.score.bareme }}</p>
 </section>
 

@@ -15,6 +15,20 @@ Plateforme web qui analyse un site **autorisé** avec Nmap, Nikto et SSLScan, **
 | N'importe quelle cible acceptée | Liste blanche + case d'autorisation obligatoire, un seul scan à la fois |
 | Un seul fichier de 600 lignes | Code découpé en modules et **tests automatiques** |
 
+## Contrôles ajoutés (version 3, étape S4)
+
+Le premier scan réel du site de la VM donnait 64/100, avec deux faux positifs et deux failles non vues. Ces contrôles corrigent les deux défauts :
+
+| Contrôle | Ce qu'il apporte |
+|---|---|
+| Chemins sensibles (`chemins.py`) | Trouve les dossiers listés (« Index of »), le code source et les copies de sauvegarde téléchargeables (`.py`, `.bak`, `.old`), les fichiers de secrets (`.env`, `.git`, `.sql`) et les zones d'administration. Requêtes GET uniquement, sous l'adresse analysée, 80 au maximum. |
+| Écoute locale (`ecoute.py`) | Quand la cible est la machine elle-même, lit l'adresse d'écoute réelle de chaque service (`ss`). Un service limité à 127.0.0.1 est noté « écoute locale » et ne retire aucun point. |
+| ETag | L'alerte « fuite d'inode » de Nikto est classée « Faux positif probable » quand l'ETag n'a que deux champs (taille et date). |
+| CVE (script `vulners` de Nmap) | Liste les CVE publiées pour les versions détectées, avec leur score CVSS. Constat « À vérifier », car il repose sur le seul numéro de version. |
+| Versions des outils | Nikto et SSLScan affichés proprement dans la méthodologie. |
+
+Limites connues : le contrôle des chemins utilise une courte liste de noms courants et les liens de la page d'accueil ; un dossier au nom inhabituel doit être ajouté avec `CHEMINS_SUPPLEMENTAIRES`. Les CVE demandent un accès à Internet (les numéros de version sont envoyés à vulners.com).
+
 ## Installation (Ubuntu 22.04)
 
 ```bash
@@ -45,6 +59,10 @@ Ils se changent au lancement, sans modifier le code :
 | `IA_DUREE_MAX` | Délai maximal de l'IA, en secondes | `120` |
 | `DUREE_MAX_NIKTO` | Durée maximale de Nikto, en secondes | `240` |
 | `NMAP_PORTS` | Ports vérifiés par Nmap | `21,22,23,25,80,443,631,3306,3389,5432,8080,8443` |
+| `CVE_ACTIVE` | `0` pour ne pas chercher les CVE (aucun envoi à vulners.com) | `1` |
+| `CHEMINS_ACTIFS` | `0` pour désactiver le contrôle des chemins sensibles | `1` |
+| `CHEMINS_SUPPLEMENTAIRES` | Chemins propres au site à contrôler en plus (`dossier/` ou `fichier`) | vide |
+| `CHEMINS_MAX_REQUETES` | Nombre maximal de requêtes du contrôle des chemins | `80` |
 
 Exemple : `IA_ACTIVE=0 python3 app.py`
 
@@ -59,6 +77,8 @@ scanner/
 │   ├── outils.py          lancement de Nmap, Nikto et SSLScan en parallèle
 │   ├── analyse.py         lecture des sorties (XML de Nmap, texte de Nikto et SSLScan)
 │   ├── verification.py    vérification directe par requêtes HTTP de lecture
+│   ├── chemins.py         contrôle des chemins sensibles (listage, sauvegardes, code source)
+│   ├── ecoute.py          adresse d'écoute réelle des services locaux (ss)
 │   ├── constats.py        règles : constats en français, gravité, preuves, recommandations
 │   ├── score.py           score sur 100 et barème
 │   ├── resume.py          résumé exécutif (IA locale ou automatique)

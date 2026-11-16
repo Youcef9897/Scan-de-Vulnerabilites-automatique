@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nmaprun scanner="nmap" version="7.80">
+<host><address addr="127.0.0.1" addrtype="ipv4"/>
+<ports>
+<port protocol="tcp" portid="80"><state state="open" reason="syn-ack"/>
+<service name="http" product="Apache httpd" version="2.4.52" extrainfo="(Ubuntu)"><cpe>cpe:/a:apache:http_server:2.4.52</cpe></service>
+<script id="vulners" output="&#xa;  cpe:/a:apache:http_server:2.4.52: ">
+<table key="cpe:/a:apache:http_server:2.4.52">
+<table><elem key="id">CVE-2022-31813</elem><elem key="is_exploit">false</elem><elem key="cvss">7.5</elem><elem key="type">cve</elem></table>
+<table><elem key="id">CVE-2023-25690</elem><elem key="is_exploit">false</elem><elem key="cvss">9.8</elem><elem key="type">cve</elem></table>
+<table><elem key="id">EXPLOITPACK:1234</elem><elem key="is_exploit">true</elem><elem key="cvss">9.8</elem><elem key="type">exploitpack</elem></table>
+<table><elem key="id">CVE-2023-25690</elem><elem key="is_exploit">false</elem><elem key="cvss">9.8</elem><elem key="type">cve</elem></table>
+<table><elem key="id">CVE-2022-28330</elem><elem key="is_exploit">false</elem><elem key="cvss">5.3</elem><elem key="type">cve</elem></table>
+</table>
+</script></port>
+<port protocol="tcp" portid="443"><state state="closed" reason="conn-refused"/><service name="https"/></port>
+<port protocol="tcp" portid="3306"><state state="open" reason="syn-ack"/>
+<service name="mysql" product="MySQL" version="5.5.5-10.6.23-MariaDB-0ubuntu0.22.04.1"/></port>
+<port protocol="tcp" portid="631"><state state="open" reason="syn-ack"/><service name="ipp" product="CUPS" version="2.4"/></port>
+</ports></host>
+</nmaprun>

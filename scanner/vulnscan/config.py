@@ -28,6 +28,22 @@ DUREE_MAX_NIKTO = int(os.environ.get("DUREE_MAX_NIKTO", "240"))
 DUREE_MAX_SSLSCAN = int(os.environ.get("DUREE_MAX_SSLSCAN", "90"))
 DUREE_MAX_HTTP = int(os.environ.get("DUREE_MAX_HTTP", "8"))
 
+# Recherche des CVE connues pour les versions détectées (script « vulners » de Nmap).
+# Les numéros de version sont envoyés au service vulners.com : CVE_ACTIVE=0 pour s'en passer.
+CVE_ACTIVE = os.environ.get("CVE_ACTIVE", "1") == "1"
+
+# Contrôle des chemins sensibles (listage de dossiers, sauvegardes, code source) : requêtes GET uniquement.
+CHEMINS_ACTIFS = os.environ.get("CHEMINS_ACTIFS", "1") == "1"
+CHEMINS_MAX_REQUETES = int(os.environ.get("CHEMINS_MAX_REQUETES", "80"))
+CHEMINS_PROFONDEUR = int(os.environ.get("CHEMINS_PROFONDEUR", "2"))
+DUREE_MAX_CHEMIN = int(os.environ.get("DUREE_MAX_CHEMIN", "4"))
+# Chemins propres au site à contrôler en plus, séparés par des virgules (« dossier/ » ou « fichier »).
+CHEMINS_SUPPLEMENTAIRES = [
+    c.strip().lstrip("/")
+    for c in os.environ.get("CHEMINS_SUPPLEMENTAIRES", "").split(",")
+    if c.strip()
+]
+
 # Résumé rédigé par l'IA locale (Ollama). IA_ACTIVE=0 pour s'en passer.
 IA_ACTIVE = os.environ.get("IA_ACTIVE", "1") == "1"
 IA_URL = os.environ.get("IA_URL", "http://localhost:11434/api/generate")

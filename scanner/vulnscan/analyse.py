@@ -1,7 +1,7 @@
 """Lecture des sorties des outils : on transforme du texte brut en données structurées."""
 import re
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from pathlib import Path
 
 
@@ -12,9 +12,32 @@ class Port:
     etat: str        # open, closed, filtered
     service: str
     version: str     # produit + version, par exemple « Apache httpd 2.4.52 (Ubuntu) »
+    cves: list = field(default_factory=list)   # [{"id": "CVE-…", "cvss": 9.8}], du score le plus haut au plus bas
 
     def en_dict(self):
         return asdict(self)
+
+
+def lire_cves(port_xml) -> list:
+    """CVE trouvées par le script « vulners » de Nmap pour un port, sans doublon, triées par score CVSS."""
+    script = next((s for s in port_xml.iter("script") if s.get("id") == "vulners"), None)
+    if script is None:
+        return []
+    trouvees = {}
+    for table in script.iter("table"):
+        champs = {e.get("key"): (e.text or "").strip() for e in table.findall("elem")}
+        ident = champs.get("id", "")
+        if not ident.startswith("CVE-"):
+            continue                  # les autres lignes sont des références d'exploits, pas des CVE
+        try:
+            cvss = float(champs.get("cvss", ""))
+        except ValueError:
+            continue
+        trouvees[ident] = max(cvss, trouvees.get(ident, 0.0))
+    if not trouvees:                  # anciennes versions du script : seulement du texte
+        for ident, cvss in re.findall(r"(CVE-\d{4}-\d+)\s+(\d+(?:\.\d+)?)", script.get("output", "")):
+            trouvees[ident] = max(float(cvss), trouvees.get(ident, 0.0))
+    return [{"id": i, "cvss": c} for i, c in sorted(trouvees.items(), key=lambda x: (-x[1], x[0]))]
 
 
 def lire_nmap_xml(fichier: Path) -> list:
@@ -34,13 +57,14 @@ def lire_nmap_xml(fichier: Path) -> list:
         if svc is not None:
             nom = svc.get("name", "")
             version = " ".join(x for x in (svc.get("product"), svc.get("version"),
-                                           f"({svc.get('extrainfo')})" if svc.get("extrainfo") else None) if x)
+                                           f"({svc.get('extrainfo').strip('()')})" if svc.get("extrainfo") else None) if x)
         ports.append(Port(
             numero=int(p.get("portid")),
             protocole=p.get("protocol", "tcp"),
             etat=etat.get("state", "") if etat is not None else "",
             service=nom,
             version=version,
+            cves=lire_cves(p),
         ))
     return sorted(ports, key=lambda x: x.numero)
 

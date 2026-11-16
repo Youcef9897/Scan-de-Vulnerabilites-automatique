@@ -6,6 +6,8 @@ une recommandation concrète et un état de vérification.
 import re
 from dataclasses import dataclass, field, asdict
 
+from .ecoute import locale_uniquement
+
 GRAVITES = ["Élevée", "Moyenne", "Faible", "Info"]
 
 CONFIRME = "Confirmé"
@@ -66,7 +68,8 @@ SERVICES_RESEAU = {
 }
 
 
-def constats_reseau(cible, ports) -> list:
+def constats_reseau(cible, ports, ecoutes=None) -> list:
+    """`ecoutes` : {port: {adresses d'écoute}} lu sur la machine quand la cible est locale (voir ecoute.py)."""
     resultats = []
     ouverts = [p for p in ports if p.etat == "open"]
     for p in ouverts:
@@ -74,20 +77,144 @@ def constats_reseau(cible, ports) -> list:
             continue
         nom, gravite, desc, reco = SERVICES_RESEAU[p.numero]
         verification = CONFIRME
-        if cible.est_locale and gravite != "Info":
+        titre = f"Port {p.numero} ouvert : {nom}"
+        preuves = []
+        adresses = (ecoutes or {}).get(p.numero) if cible.est_locale else None
+        if adresses and locale_uniquement(adresses):
+            # Preuve directe : le service n'écoute que sur la machine elle-même.
+            titre = f"Port {p.numero} en écoute locale uniquement : {nom}"
+            gravite = "Info"
+            desc = ("Ce service n'écoute que sur l'adresse locale de la machine : il n'est pas joignable "
+                    "depuis le réseau. C'est la configuration recommandée.")
+            reco = "Aucune action : conserver cette écoute limitée à l'adresse locale."
+            preuves = [f"ss : écoute sur {', '.join(sorted(adresses))}:{p.numero}"]
+        elif adresses:
+            desc += (" Le service écoute sur une adresse joignable depuis le réseau "
+                     "(sauf si un pare-feu le bloque).")
+            preuves = [f"ss : écoute sur {', '.join(sorted(adresses))}:{p.numero}"]
+        elif cible.est_locale and gravite != "Info":
             gravite = _baisser(gravite)
             verification = NON_VERIFIABLE
             desc += (" Le scan a été lancé depuis la machine elle-même : ce port n'est peut-être pas "
                      "joignable depuis le réseau. À revérifier depuis une autre machine.")
         version = f" ({p.version})" if p.version else ""
         resultats.append(Constat(
-            titre=f"Port {p.numero} ouvert : {nom}",
+            titre=titre,
             gravite=gravite, categorie="Réseau", description=desc, recommandation=reco,
-            preuves=[f"Nmap : {p.numero}/{p.protocole} open {p.service}{version}"],
-            sources=["Nmap"], verification=verification,
+            preuves=[f"Nmap : {p.numero}/{p.protocole} open {p.service}{version}"] + preuves,
+            sources=["Nmap"] + (["ss"] if preuves else []), verification=verification,
             reference="OWASP ASVS V14 — Configuration",
         ))
     return resultats
+
+
+def constats_cve(ports) -> list:
+    """Un constat par service dont la version annoncée correspond à des CVE publiées."""
+    resultats = []
+    for p in ports:
+        if p.etat != "open" or not p.cves:
+            continue
+        maxi = p.cves[0]["cvss"]
+        # Constat fondé sur le seul numéro de version : un cran en dessous de la gravité CVSS.
+        gravite = "Moyenne" if maxi >= 7 else "Faible" if maxi >= 4 else "Info"
+        produit = p.version or p.service
+        resultats.append(Constat(
+            titre=f"{len(p.cves)} CVE connue(s) pour {produit} (port {p.numero})",
+            gravite=gravite, categorie="Mises à jour",
+            description=f"La version annoncée par le service correspond à {len(p.cves)} vulnérabilité(s) publiée(s), "
+                        f"avec un score CVSS maximal de {maxi}. Ce constat repose uniquement sur le numéro de version : "
+                        "sur Debian et Ubuntu, les correctifs de sécurité sont souvent appliqués sans changer ce numéro, "
+                        "d'où l'état « À vérifier ».",
+            recommandation="Mettre le paquet à jour (apt update && apt upgrade), puis contrôler les CVE les plus graves "
+                           "sur le suivi de sécurité de la distribution (par exemple ubuntu.com/security/CVE-AAAA-NNNN).",
+            preuves=[f"vulners : {c['id']} (CVSS {c['cvss']}) — https://nvd.nist.gov/vuln/detail/{c['id']}"
+                     for c in p.cves[:5]]
+                    + ([f"… et {len(p.cves) - 5} autre(s)"] if len(p.cves) > 5 else []),
+            sources=["Nmap (vulners)"], verification=NON_VERIFIABLE,
+            reference="OWASP Top 10 A06 — Composants vulnérables et obsolètes"))
+    return resultats
+
+
+TITRE_LISTAGE = "Listage du contenu d'un dossier"
+
+
+def constats_chemins(ch) -> list:
+    """Constats tirés du contrôle des chemins sensibles (voir chemins.py). Tous sont reproduits par une requête."""
+    if not ch:
+        return []
+    r = []
+    if ch.get("secrets"):
+        r.append(Constat(
+            titre="Fichier de secrets ou de données téléchargeable",
+            gravite="Élevée", categorie="Divulgation d'informations",
+            description="Des fichiers qui contiennent habituellement des mots de passe, des clés ou des données "
+                        "(configuration, dépôt Git, export de base, archive) peuvent être téléchargés sans authentification.",
+            recommandation="Retirer ces fichiers du dossier servi par le serveur web, puis changer tout secret qu'ils contenaient.",
+            preuves=[f"GET {e['chemin']} → {e['origine']}" for e in ch["secrets"][:10]],
+            sources=["Chemins sensibles"], reference="OWASP WSTG — Review Old Backup and Unreferenced Files"))
+    if ch.get("sources"):
+        r.append(Constat(
+            titre="Code source ou copie de sauvegarde téléchargeable",
+            gravite="Moyenne", categorie="Divulgation d'informations",
+            description="Du code source, des scripts ou des copies de sauvegarde sont servis tels quels : un attaquant "
+                        "peut les lire pour comprendre le fonctionnement interne et y chercher des failles ou des secrets.",
+            recommandation="Sortir ces fichiers du dossier public du serveur web (par exemple hors de /var/www/html) "
+                           "et supprimer les copies de sauvegarde (.bak, .old).",
+            preuves=[f"GET {e['chemin']} → {e['origine']}" for e in ch["sources"][:10]],
+            sources=["Chemins sensibles"], reference="OWASP WSTG — Review Old Backup and Unreferenced Files"))
+    if ch.get("listages"):
+        r.append(Constat(
+            titre=TITRE_LISTAGE,
+            gravite="Moyenne", categorie="Configuration",
+            description="Le contenu d'un dossier est affiché : des fichiers non prévus pour le public peuvent être découverts.",
+            recommandation="Désactiver le listage : « Options -Indexes » dans la configuration Apache.",
+            preuves=[f"GET {d} → page « Index of »" for d in ch["listages"][:10]],
+            sources=["Chemins sensibles"], reference="OWASP WSTG — Configuration and Deployment Management"))
+    if ch.get("admin"):
+        r.append(Constat(
+            titre="Zone d'administration joignable",
+            gravite="Faible", categorie="Contrôle d'accès",
+            description="Un dossier d'administration répond sans filtrage par adresse. Le contrôle ne dit pas si une "
+                        "authentification le protège : c'est à vérifier à la main.",
+            recommandation="Restreindre l'accès (adresse IP ou authentification forte) et limiter les tentatives de connexion.",
+            preuves=[f"GET {d} → code 200" for d in ch["admin"]],
+            sources=["Chemins sensibles"], verification=NON_VERIFIABLE,
+            reference="OWASP WSTG — Enumerate Infrastructure and Application Admin Interfaces"))
+    return r
+
+
+def _constat_etag(lignes, obs) -> Constat:
+    """Nikto annonce une fuite d'inode dès qu'il voit un ETag. On regarde le nombre de champs :
+    3 champs = inode-taille-date (fuite réelle, anciens Apache) ; 2 champs = taille-date (pas d'inode)."""
+    champs = None
+    for l in lignes:
+        m = re.search(r"fields:\s*((?:0x[0-9a-f]+\s*)+)", l, re.I)
+        if m:
+            champs = len(m.group(1).split())
+        elif re.search(r"inode:\s*\S+", l, re.I):
+            champs = 3
+    entete = next((v for k, v in (obs.get("entetes") or {}).items() if k.lower() == "etag"), "")
+    if entete:
+        champs = len(entete.strip('W/"').split("-"))
+    preuves = [f"Nikto : {l}" for l in lignes] + ([f"Vérification : ETag = {entete}"] if entete else [])
+    if champs is not None and champs < 3:
+        return Constat(
+            titre="Fuite d'inode par l'en-tête ETag signalée par Nikto",
+            gravite="Info", categorie="Divulgation d'informations",
+            description=f"L'ETag observé n'a que {champs} champ(s) (taille et date du fichier) : il ne contient pas de "
+                        "numéro d'inode. Depuis Apache 2.4, l'inode n'est plus inclus par défaut ; cette alerte de Nikto "
+                        "vise les anciennes versions.",
+            recommandation="Aucune action nécessaire.",
+            preuves=preuves, sources=["Nikto"] + (["Vérification"] if entete else []), verification=FAUX_POSITIF,
+            reference="OWASP WSTG — Configuration and Deployment Management")
+    return Constat(
+        titre="Informations internes divulguées par l'en-tête ETag",
+        gravite="Faible", categorie="Divulgation d'informations",
+        description="L'en-tête ETag contient des informations internes au serveur (numéro d'inode).",
+        recommandation="Sous Apache : « FileETag MTime Size ».",
+        preuves=preuves, sources=["Nikto"] + (["Vérification"] if entete else []),
+        verification=CONFIRME if champs else NON_VERIFIABLE,
+        reference="OWASP WSTG — Configuration and Deployment Management")
 
 
 # ---------------------------------------------------------------- Web (vérification + Nikto)
@@ -295,9 +422,6 @@ def constats_web(cible, nikto, obs, ports) -> list:
         (r"admin(istration)? (login|section|page)", "Page d'administration accessible", "Moyenne", "Contrôle d'accès",
          "Une page d'administration est joignable : elle peut être visée par des attaques par force brute.",
          "Restreindre l'accès (par adresse IP ou authentification forte) et limiter les tentatives de connexion."),
-        (r"ETags", "Informations internes divulguées par l'en-tête ETag", "Faible", "Divulgation d'informations",
-         "L'en-tête ETag contient des informations internes au serveur (numéro d'inode).",
-         "Sous Apache : « FileETag MTime Size »."),
         (r"default file|/icons/README", "Fichier par défaut du serveur présent", "Faible", "Configuration",
          "Des fichiers d'exemple installés avec le serveur sont accessibles et confirment le logiciel utilisé.",
          "Supprimer ou bloquer l'accès aux fichiers par défaut (par exemple le dossier /icons/)."),
@@ -309,7 +433,10 @@ def constats_web(cible, nikto, obs, ports) -> list:
          "Nikto a obtenu une réponse pour plusieurs noms de page d'accueil ; c'est souvent un comportement normal du serveur.",
          "Aucune action nécessaire si ces pages n'existent pas réellement."),
     ]
-    deja = re.compile(r"(X-Frame-Options|X-Content-Type-Options|cookie .+ created without|DEBUG HTTP verb|Allowed HTTP Methods)", re.I)
+    lignes_etag = _lignes(nikto, r"ETags")
+    if lignes_etag:
+        r.append(_constat_etag(lignes_etag, obs))
+    deja = re.compile(r"(X-Frame-Options|X-Content-Type-Options|cookie .+ created without|DEBUG HTTP verb|Allowed HTTP Methods|ETags)", re.I)
     for ligne in nikto["constats"]:
         if deja.search(ligne):
             continue
@@ -383,8 +510,17 @@ def constats_tls(ssl, obs) -> list:
 
 # ---------------------------------------------------------------- Assemblage
 
-def construire(cible, ports, nikto, ssl, obs) -> list:
-    tous = constats_reseau(cible, ports) + constats_web(cible, nikto, obs, ports) + constats_tls(ssl, obs)
+def construire(cible, ports, nikto, ssl, obs, ecoutes=None, chemins=None) -> list:
+    tous = (constats_reseau(cible, ports, ecoutes) + constats_cve(ports) + constats_chemins(chemins)
+            + constats_web(cible, nikto, obs, ports) + constats_tls(ssl, obs))
+    # Un listage vu à la fois par notre contrôle et par Nikto ne fait qu'un seul constat.
+    listages = [c for c in tous if c.titre == TITRE_LISTAGE]
+    if len(listages) > 1:
+        garde = listages[0]
+        for autre in listages[1:]:
+            garde.preuves += autre.preuves
+            garde.sources += [s for s in autre.sources if s not in garde.sources]
+            tous.remove(autre)
     ordre_verif = {CONFIRME: 0, NON_VERIFIABLE: 1, NON_CONFIRME: 2, FAUX_POSITIF: 3}
     tous.sort(key=lambda c: (GRAVITES.index(c.gravite), ordre_verif.get(c.verification, 9), c.titre))
     for i, c in enumerate(tous, 1):

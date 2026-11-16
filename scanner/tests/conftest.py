@@ -80,3 +80,58 @@ cat "{DONNEES}/sslscan_exemple.txt"
 """)
     monkeypatch.setenv("PATH", f"{bin_}{os.pathsep}{os.environ['PATH']}")
     return bin_
+
+
+class FauxSiteFragile(BaseHTTPRequestHandler):
+    """Imite le site de la VM tel qu'il est vraiment : listage de dossiers activé,
+    code source et copie de sauvegarde téléchargeables, 404 pour le reste."""
+    server_version = "Apache/2.4.52 (Ubuntu)"
+    sys_version = ""
+    PAGES = {
+        "/mon-site/": ("text/html", '<html><head><link rel="stylesheet" href="assets/css/style.css"></head>'
+                                    '<body><a href="login.html">Espace Pro</a><img src="assets/img/jean1.jpg"></body></html>'),
+        "/mon-site/login.html": ("text/html", "<html><body>Login</body></html>"),
+        "/mon-site/assets/": ("text/html", '<html><head><title>Index of /mon-site/assets</title></head><body>'
+                                           '<a href="?C=N;O=D">Name</a><a href="/mon-site/">Parent Directory</a>'
+                                           '<a href="css/">css/</a><a href="img/">img/</a></body></html>'),
+        "/mon-site/assets/img/": ("text/html", '<html><head><title>Index of /mon-site/assets/img</title></head>'
+                                               '<body><a href="jean1.jpg">jean1.jpg</a></body></html>'),
+        "/mon-site/assets/css/": ("text/html", '<html><head><title>Index of /mon-site/assets/css</title></head>'
+                                               '<body><a href="style.css">style.css</a></body></html>'),
+        "/mon-site/scanner-auto/": ("text/html", '<html><head><title>Index of /mon-site/scanner-auto</title></head><body>'
+                                                 '<a href="app.py">app.py</a><a href="app.py.bak">app.py.bak</a>'
+                                                 '<a href="templates/">templates/</a></body></html>'),
+        "/mon-site/scanner-auto/app.py": ("text/x-python", "from flask import Flask"),
+        "/mon-site/scanner-auto/app.py.bak": ("application/octet-stream", "from flask import Flask"),
+        "/mon-site/login.html.bak": ("application/octet-stream", "<html>ancienne page</html>"),
+        "/mon-site/admin/": ("text/html", "<html><body>Administration</body></html>"),
+        "/hors-perimetre/secret.env": ("text/plain", "MOT=1"),
+    }
+    demandes = []
+
+    def log_message(self, *args):
+        pass
+
+    def do_GET(self):
+        type(self).demandes.append(self.path)
+        if self.path in self.PAGES:
+            genre, texte = self.PAGES[self.path]
+            corps = texte.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", genre)
+        else:
+            corps = b"<html><body>404 Not Found</body></html>"
+            self.send_response(404)
+            self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Length", str(len(corps)))
+        self.end_headers()
+        self.wfile.write(corps)
+
+
+@pytest.fixture
+def site_fragile():
+    FauxSiteFragile.demandes = []
+    serveur = ThreadingHTTPServer(("127.0.0.1", 0), FauxSiteFragile)
+    threading.Thread(target=serveur.serve_forever, daemon=True).start()
+    yield f"http://127.0.0.1:{serveur.server_address[1]}/mon-site/"
+    serveur.shutdown()

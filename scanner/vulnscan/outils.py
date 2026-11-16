@@ -1,4 +1,5 @@
 """Lancement des outils externes (Nmap, Nikto, SSLScan) avec des durées bornées."""
+import re
 import shlex
 import shutil
 import subprocess
@@ -62,9 +63,28 @@ def versions_outils() -> dict:
             return "inconnue"
     return {
         "Nmap": premiere_ligne(["nmap", "--version"]),
-        "Nikto": next((l for l in premiere_ligne_nikto().splitlines() if "Nikto" in l), "inconnue"),
-        "SSLScan": premiere_ligne(["sslscan", "--version"]),
+        "Nikto": version_nikto(premiere_ligne_nikto()),
+        "SSLScan": version_sslscan(premiere_ligne(["sslscan", "--version"])),
     }
+
+
+_COULEURS_TERMINAL = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+
+def version_nikto(texte: str) -> str:
+    """« Nikto 2.1.5 » à partir de la sortie de `nikto -Version` (un tableau, selon les versions)."""
+    if texte == "non installé":
+        return texte
+    m = re.search(r"Nikto(?: main)?\s+v?(\d+(?:\.\d+)+)", _COULEURS_TERMINAL.sub("", texte))
+    return f"Nikto {m.group(1)}" if m else "inconnue"
+
+
+def version_sslscan(ligne: str) -> str:
+    """Retire les codes de couleur du terminal (« \x1b[1;34m ») de la version de SSLScan."""
+    propre = _COULEURS_TERMINAL.sub("", ligne).strip()
+    if propre in ("non installé", "inconnue", ""):
+        return propre or "inconnue"
+    return propre if propre.lower().startswith("sslscan") else f"SSLScan {propre}"
 
 
 def premiere_ligne_nikto() -> str:
@@ -81,9 +101,20 @@ def commande_nmap(hote: str, fichier_xml: Path) -> list:
     # -Pn : beaucoup de serveurs ne répondent pas au ping.
     # --version-light, -T4, --max-retries : détection des versions plus rapide.
     # -oX : sortie XML (analyse fiable) ; la sortie normale reste lisible pour l'annexe.
-    return ["nmap", "-Pn", "-sV", "--version-light", "-T4", "--max-retries", "2",
-            "--host-timeout", f"{max(config.DUREE_MAX_NMAP - 10, 30)}s",
-            "-p", config.NMAP_PORTS, "-oX", str(fichier_xml), hote]
+    cmd = ["nmap", "-Pn", "-sV", "--version-light", "-T4", "--max-retries", "2",
+           "--host-timeout", f"{max(config.DUREE_MAX_NMAP - 10, 30)}s",
+           "-p", config.NMAP_PORTS, "-oX", str(fichier_xml)]
+    if config.CVE_ACTIVE and script_vulners_present():
+        cmd += ["--script", "vulners"]      # CVE connues pour les versions détectées
+    return cmd + [hote]
+
+
+DOSSIERS_SCRIPTS_NMAP = ["/usr/share/nmap/scripts", "/usr/local/share/nmap/scripts"]
+
+
+def script_vulners_present() -> bool:
+    """Nmap s'arrête si on lui demande un script absent : on vérifie avant de l'ajouter."""
+    return any((Path(d) / "vulners.nse").exists() for d in DOSSIERS_SCRIPTS_NMAP)
 
 
 def commande_nikto(url: str) -> list:

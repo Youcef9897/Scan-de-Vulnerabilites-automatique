@@ -6,7 +6,8 @@ import threading
 import time
 import uuid
 
-from . import analyse, config, constats as mod_constats, outils, resume, score as mod_score, verification
+from . import (analyse, chemins as mod_chemins, config, constats as mod_constats, ecoute, outils, resume,
+               score as mod_score, verification)
 
 
 class Scan:
@@ -56,6 +57,14 @@ class Scan:
         obs = verification.verifier(self.cible)
         durees["Vérification directe"] = round(time.time() - tv, 1)
 
+        ch = None
+        if config.CHEMINS_ACTIFS and obs.get("accessible"):
+            self._maj(8, "Contrôle des chemins sensibles…")
+            tc = time.time()
+            ch = mod_chemins.controler(self.cible, obs.get("page", ""))
+            durees["Chemins sensibles"] = round(time.time() - tc, 1)
+        ecoutes = ecoute.ecoutes_locales() if self.cible.est_locale else None
+
         self._maj(10, "Nmap, Nikto et SSLScan lancés en parallèle…")
         termines = []
 
@@ -72,7 +81,7 @@ class Scan:
         ports = analyse.lire_nmap_xml(self.dossier / "nmap.xml")
         nikto = analyse.lire_nikto(res_outils["Nikto"].sortie)
         ssl = analyse.lire_sslscan(res_outils["SSLScan"].sortie)
-        liste = mod_constats.construire(self.cible, ports, nikto, ssl, obs)
+        liste = mod_constats.construire(self.cible, ports, nikto, ssl, obs, ecoutes, ch)
         sc = mod_score.calculer(liste)
 
         self._maj(85, "Rédaction du résumé…")
@@ -88,7 +97,10 @@ class Scan:
             "date": self.debut.strftime("%d/%m/%Y à %H:%M"),
             "durees": durees,
             "versions": outils.versions_outils(),
-            "commandes": {n: r.commande for n, r in res_outils.items()},
+            "commandes": {**{n: r.commande for n, r in res_outils.items()},
+                          **({"Chemins sensibles": f"{ch['requetes']} requête(s) GET sous l'adresse analysée"} if ch else {})},
+            "chemins": ({"requetes": ch["requetes"], "ignore": ch["ignore"]} if ch else None),
+            "ecoute_locale_lue": ecoutes is not None,
             "outils_interrompus": [n for n, r in res_outils.items() if r.interrompu],
             "erreurs_outils": {n: r.erreur for n, r in res_outils.items() if r.erreur},
             "nikto_elements_testes": nikto["elements_testes"],
@@ -97,7 +109,8 @@ class Scan:
             "score": sc,
             "resume": texte,
             "resume_origine": origine,
-            "sorties": {n: (r.sortie or r.erreur) for n, r in res_outils.items()},
+            "sorties": {**{n: (r.sortie or r.erreur) for n, r in res_outils.items()},
+                        **({"Chemins sensibles": ch["ignore"] or "\n".join(ch["journal"])} if ch else {})},
         }
         (self.dossier / "resultat.json").write_text(
             json.dumps(self.resultat, ensure_ascii=False, indent=2), encoding="utf-8")

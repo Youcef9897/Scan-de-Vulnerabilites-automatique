@@ -12,7 +12,7 @@ DONNEES = Path(__file__).resolve().parent / "donnees"
 def test_lecture_nmap_xml():
     ports = analyse.lire_nmap_xml(DONNEES / "nmap_vm.xml")
     assert [p.numero for p in ports] == [80, 443, 631, 3306]
-    assert ports[0].version == "Apache httpd 2.4.52 ((Ubuntu))"
+    assert ports[0].version == "Apache httpd 2.4.52 (Ubuntu)"
     assert ports[1].etat == "closed"
 
 

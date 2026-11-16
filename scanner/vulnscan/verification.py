@@ -70,6 +70,7 @@ def verifier(cible) -> dict:
     obs["serveur_avec_version"] = bool(re.search(r"\d", obs["serveur"]))
     obs["powered_by"] = r.headers.get("X-Powered-By", "")
     obs["cookies"] = _cookies(r)
+    obs["page"] = r.text[:200000]      # sert au contrôle des chemins sensibles (liens de la page)
 
     # Méthodes HTTP : OPTIONS (liste annoncée), TRACE et DEBUG (doivent être refusées).
     obs["methodes_annoncees"] = ""
