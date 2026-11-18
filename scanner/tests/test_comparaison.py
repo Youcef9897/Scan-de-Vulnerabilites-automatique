@@ -133,3 +133,10 @@ def test_comparaison_refusee_si_identifiants_invalides(tmp_path, monkeypatch):
     assert c.get(f"/comparer?avant={AVANT['id']}&apres={AVANT['id']}").status_code == 400
     assert c.get(f"/comparer?avant={AVANT['id']}&apres=..%2F..%2Fetc").status_code == 404
     assert c.get("/comparer").status_code == 400
+
+
+def test_choix_par_defaut_plus_ancienne_analyse_du_meme_site(tmp_path, monkeypatch):
+    c = _client(tmp_path, monkeypatch)
+    page = c.get("/").get_data(as_text=True)
+    assert f'<option value="{AVANT["id"]}" selected>' in page          # avant : la plus ancienne
+    assert page.count(" selected>") == 2

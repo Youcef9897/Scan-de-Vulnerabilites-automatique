@@ -37,7 +37,7 @@
   <p class="doux">Mesure l'effet des corrections : ce qui a été corrigé, ce qui reste et ce qui est apparu entre deux analyses du même site.</p>
   <form action="/comparer" method="get" class="comparer">
     <label>Avant
-      <select name="avant">{% for h in choix %}<option value="{{ h.id }}" {% if loop.index == 2 %}selected{% endif %}>{{ h.date }} — {{ h.score }}/100 — {{ h.url }}</option>{% endfor %}</select>
+      <select name="avant">{% for h in choix %}<option value="{{ h.id }}" {% if h.id == avant_defaut %}selected{% endif %}>{{ h.date }} — {{ h.score }}/100 — {{ h.url }}</option>{% endfor %}</select>
     </label>
     <label>Après
       <select name="apres">{% for h in choix %}<option value="{{ h.id }}" {% if loop.first %}selected{% endif %}>{{ h.date }} — {{ h.score }}/100 — {{ h.url }}</option>{% endfor %}</select>

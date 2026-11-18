@@ -59,7 +59,11 @@ def historique(limite=10) -> list:
 
 @app.route("/")
 def accueil():
-    return render_template("index.html", historique=historique(), choix=historique(30),
+    choix = historique(30)
+    # Par défaut : « Après » = la dernière analyse, « Avant » = la plus ancienne analyse de la même adresse
+    meme_site = [h for h in choix if choix and h["url"] == choix[0]["url"]]
+    avant_defaut = meme_site[-1]["id"] if len(meme_site) >= 2 else (choix[1]["id"] if len(choix) >= 2 else "")
+    return render_template("index.html", historique=historique(), choix=choix, avant_defaut=avant_defaut,
                            cibles=", ".join(config.CIBLES_AUTORISEES))
 
 
