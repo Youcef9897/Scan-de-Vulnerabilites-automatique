@@ -1,0 +1,29 @@
+:root { --fond: #f4f6f8; --texte: #1d2733; --doux: #5b6878; --accent: #0f5e8a; --bord: #d8dee6; --alerte: #8a5a00; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: var(--fond); color: var(--texte); line-height: 1.5; }
+.lab { margin: 0; padding: 6px 16px; background: #fdf6e3; color: var(--alerte); font-size: 14px; text-align: center; }
+header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+         padding: 14px 24px; background: #fff; border-bottom: 1px solid var(--bord); }
+.marque { font-weight: 700; font-size: 20px; color: var(--accent); text-decoration: none; }
+nav a { margin-left: 16px; color: var(--texte); }
+main { max-width: 1000px; margin: 0 auto; padding: 24px; }
+.grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.produit, .carte { background: #fff; border: 1px solid var(--bord); border-radius: 8px; padding: 16px; }
+.produit h2 { font-size: 17px; margin: 10px 0 4px; }
+.vignette { height: 90px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+            background: #e5eef5; color: var(--accent); font-weight: 600; }
+.prix { font-weight: 700; font-size: 18px; }
+form.recherche, form.ligne { display: flex; gap: 8px; margin: 12px 0; }
+input { padding: 8px 10px; border: 1px solid var(--bord); border-radius: 6px; font-size: 15px; }
+input[type=number] { width: 70px; }
+button { padding: 8px 14px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font-size: 15px; cursor: pointer; }
+button.second { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+.carte label { display: block; margin-bottom: 12px; }
+.carte input { display: block; width: 100%; margin-top: 4px; }
+table { width: 100%; border-collapse: collapse; background: #fff; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--bord); text-align: left; }
+.total td { font-weight: 700; }
+.info { background: #eef6fb; padding: 8px 12px; border-radius: 6px; }
+.erreur { background: #fef2f2; color: #b42318; padding: 8px 12px; border-radius: 6px; }
+.petit { font-size: 14px; color: var(--doux); }
+footer { text-align: center; color: var(--doux); font-size: 14px; padding: 24px; }
