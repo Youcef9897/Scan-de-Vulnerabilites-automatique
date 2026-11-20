@@ -111,3 +111,28 @@ def test_commande_d_un_autre_client_visible(boutique):
 def test_fichiers_internes_non_executables_depuis_le_web(boutique):
     # L'installateur refuse de tourner hors ligne de commande (la protection Apache s'ajoute dans la VM).
     assert requests.get(f"{boutique}/inc/installer.php", timeout=5).status_code == 403
+
+
+def test_photo_affichee_avec_son_credit_seulement_si_telechargee(tmp_path):
+    site = tmp_path / "site"
+    shutil.copytree(APP, site)
+    base = tmp_path / "b.sqlite"
+    (site / "config.php").write_text(f"<?php return ['dsn' => 'sqlite:{base}'];\n", encoding="utf-8")
+    subprocess.run(["php", str(site / "inc" / "installer.php")], check=True, capture_output=True)
+    (site / "img" / "produit-1.jpg").write_bytes(b"\xff\xd8\xff\xd9")      # seule la photo du câble est là
+    port = _port_libre()
+    serveur = subprocess.Popen(["php", "-S", f"127.0.0.1:{port}", "-t", str(site)],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        for _ in range(50):
+            try:
+                page = requests.get(f"http://127.0.0.1:{port}", timeout=1).text
+                break
+            except requests.ConnectionError:
+                time.sleep(0.1)
+        assert '<img class="vignette" src="img/produit-1.jpg"' in page
+        assert page.count('<img class="vignette"') == 1 and '<div class="vignette">Réseau</div>' in page
+        assert 'Photos libres de droits : <a href="https://www.pexels.com/photo/4716292/">Pexels, photo n° 4716292</a>.' in page
+    finally:
+        serveur.terminate()
+        serveur.wait(timeout=5)

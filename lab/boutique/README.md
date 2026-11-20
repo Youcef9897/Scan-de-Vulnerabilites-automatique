@@ -38,6 +38,13 @@ dans `config.php`, lisible par Apache et root), remplit les données fictives et
 Désinstallation (root) : `a2dissite netstock-lab && systemctl reload apache2`, puis
 `mysql -e "DROP DATABASE netstock_lab; DROP USER 'netstock_lab'@'localhost';"` et `rm -r /var/www/netstock-lab`.
 
+## Photos des produits
+
+Les photos ne sont pas stockées dans le dépôt. `telecharger-photos.sh` (root, après l'installation) les télécharge
+depuis Pexels et Unsplash, deux banques d'images à licence libre, d'après `app/img/photos.txt`, les met à
+400 × 260 px et les copie dans le site. Le pied de page crédite chaque photo avec un lien vers sa page d'origine.
+Un produit sans photo garde une vignette texte (le SSD, faute de photo libre adaptée).
+
 ## Tests automatiques
 
 `scanner/tests/test_boutique.py` lance la boutique avec le serveur intégré de PHP et une base SQLite, et vérifie

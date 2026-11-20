@@ -23,7 +23,12 @@ require __DIR__ . '/inc/haut.php';
 <div class="grille">
 <?php foreach ($produits as $p): ?>
   <article class="produit">
-    <div class="vignette"><?= e($p['categorie']) ?></div>
+    <?php $photo = 'img/produit-' . (int) $p['id'] . '.jpg'; ?>
+    <?php if (is_file(__DIR__ . '/' . $photo)): ?>
+      <img class="vignette" src="<?= $photo ?>" alt="<?= e($p['nom']) ?>" width="400" height="260">
+    <?php else: ?>
+      <div class="vignette"><?= e($p['categorie']) ?></div>
+    <?php endif; ?>
     <h2><?= e($p['nom']) ?></h2>
     <p><?= e($p['description']) ?></p>
     <p class="prix"><?= euros((float) $p['prix']) ?></p>
