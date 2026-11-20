@@ -15,6 +15,14 @@ BAREME = ("Le score part de 100. Chaque constat retire des points selon sa gravi
           "faux positifs probables ne sont pas comptés. Niveaux : 90 à 100 Bon, 75 à 89 Correct, "
           "50 à 74 À améliorer, moins de 50 Insuffisant.")
 
+# Ce que Nmap, Nikto, SSLScan et la vérification directe ne peuvent pas voir : sans ce rappel, un bon score
+# sur un site plein de failles applicatives (cas de la boutique NetStock Lab, 78/100) donnerait une fausse assurance.
+PERIMETRE = ("Périmètre : cette analyse porte sur la configuration du serveur (ports, en-têtes, cookies, méthodes HTTP, "
+             "chiffrement, fichiers exposés). Elle ne teste pas la logique de l'application : injection SQL, XSS, "
+             "contrôle d'accès aux données d'un autre client, prix ou quantités modifiés dans le panier. "
+             "Ces failles demandent des tests dynamiques (ZAP en mode actif, Burp Suite) ou une relecture du code : "
+             "un bon score ne garantit pas leur absence.")
+
 
 def compter(constats) -> dict:
     return {g: sum(1 for c in constats if c.gravite == g) for g in GRAVITES}
@@ -26,4 +34,4 @@ def calculer(constats) -> dict:
     score = max(0, 100 - retrait)
     niveau, commentaire = next((n, t) for seuil, n, t in NIVEAUX if score >= seuil)
     return {"score": score, "niveau": niveau, "commentaire": commentaire,
-            "retrait": retrait, "comptes": compter(retenus), "bareme": BAREME}
+            "retrait": retrait, "comptes": compter(retenus), "bareme": BAREME, "perimetre": PERIMETRE}

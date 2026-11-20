@@ -99,6 +99,7 @@
   </table>
   {% if r.chemins and r.chemins.ignore %}<p class="alerte petit" style="margin-top:12px">{{ r.chemins.ignore }}</p>{% endif %}
   <p class="petit doux" style="margin-top:12px">{{ r.score.bareme }}</p>
+  {% if r.score.perimetre %}<p class="petit doux">{{ r.score.perimetre }}</p>{% endif %}
 </section>
 
 <section class="carte">

@@ -43,9 +43,9 @@ def _cookies(reponse) -> list:
     return cookies
 
 
-def _methode(url: str, methode: str):
+def _methode(url: str, methode: str, entetes: dict | None = None):
     try:
-        r = requests.request(methode, url, timeout=config.DUREE_MAX_HTTP,
+        r = requests.request(methode, url, headers=entetes, timeout=config.DUREE_MAX_HTTP,
                              allow_redirects=False, verify=False)
         return r.status_code, r.text[:500]
     except requests.RequestException:
@@ -120,9 +120,12 @@ def verifier(cible) -> dict:
         pass
     code_trace, corps_trace = _methode(cible.url, "TRACE")
     obs["trace_active"] = code_trace == 200 and "TRACE" in corps_trace.upper()
-    code_debug, _ = _methode(cible.url, "DEBUG")
+    # Le vrai débogage à distance (ASP.NET sous IIS) répond exactement « OK » à DEBUG avec l'en-tête
+    # « Command: stop-debug ». Une application PHP répond 200 à n'importe quelle méthode en renvoyant
+    # sa page normale : ce code 200 seul ne prouve donc rien.
+    code_debug, corps_debug = _methode(cible.url, "DEBUG", {"Command": "stop-debug"})
     obs["debug_code"] = code_debug
-    obs["debug_accepte"] = code_debug == 200
+    obs["debug_accepte"] = code_debug == 200 and corps_debug.strip() == "OK"
 
     # HTTPS : le site est-il aussi disponible en HTTPS, et HTTP redirige-t-il vers HTTPS ?
     p = urlparse(cible.url)

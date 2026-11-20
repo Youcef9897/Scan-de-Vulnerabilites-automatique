@@ -31,3 +31,19 @@ def test_scan_complet(faux_site, faux_outils, tmp_path, monkeypatch):
     assert debug["verification"] == "Faux positif probable"
     assert (scan.dossier / "resultat.json").exists()
     assert (scan.dossier / "nikto.txt").read_text().startswith("- Nikto v2.1.5")
+
+
+def test_le_pdf_contient_le_perimetre(faux_site, faux_outils, tmp_path, monkeypatch):
+    import shutil
+    import subprocess
+    import pytest
+    from vulnscan.rapport_pdf import generer_pdf
+    if shutil.which("pdftotext") is None:
+        pytest.skip("pdftotext absent")
+    monkeypatch.setattr(config, "DOSSIER_SCANS", tmp_path / "scans")
+    monkeypatch.setattr(config, "IA_ACTIVE", False)
+    scan = Scan(preparer_cible(faux_site, liste_blanche=["127.0.0.1"]))
+    scan.executer()
+    generer_pdf(scan.resultat, tmp_path / "rapport.pdf")
+    texte = subprocess.run(["pdftotext", str(tmp_path / "rapport.pdf"), "-"], capture_output=True, text=True).stdout
+    assert "Périmètre" in texte and "injection SQL" in texte

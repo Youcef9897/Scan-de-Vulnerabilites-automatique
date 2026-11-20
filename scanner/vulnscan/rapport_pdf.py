@@ -109,6 +109,8 @@ def generer_pdf(r: dict, chemin: Path):
     comptes.setStyle(TableStyle([("BACKGROUND", (i, 0), (i, 0), COULEURS[g]) for i, g in enumerate(COULEURS)]
                                 + [("TOPPADDING", (0, 0), (-1, -1), 6), ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
     h += [Spacer(1, 0.2 * cm), comptes, Spacer(1, 0.2 * cm), P(r["score"]["bareme"], "petit")]
+    if r["score"].get("perimetre"):
+        h += [Spacer(1, 0.1 * cm), P(r["score"]["perimetre"], "petit")]
 
     # Tableau des constats
     h += [Paragraph("2. Constats", S["h1"])]

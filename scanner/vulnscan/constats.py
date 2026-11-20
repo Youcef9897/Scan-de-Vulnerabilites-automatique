@@ -402,6 +402,11 @@ def constats_web(cible, nikto, obs, ports) -> list:
     for l in _lignes(nikto, r"DEBUG HTTP verb"):
         if obs.get("debug_accepte"):
             etat, grav, desc = CONFIRME, "Moyenne", "Le serveur accepte la méthode DEBUG, qui peut révéler des informations de débogage."
+        elif obs.get("debug_code") == 200:
+            etat, grav = FAUX_POSITIF, "Info"
+            desc = ("Le serveur répond 200 à DEBUG, mais avec sa page normale et non la réponse « OK » du débogage "
+                    "à distance d'ASP.NET : l'application (PHP par exemple) répond simplement à toutes les méthodes. "
+                    "Aucune information de débogage n'est exposée.")
         else:
             etat, grav = FAUX_POSITIF, "Info"
             desc = (f"La vérification directe montre que la méthode DEBUG est refusée (code {obs.get('debug_code')}). "
@@ -410,7 +415,9 @@ def constats_web(cible, nikto, obs, ports) -> list:
             titre="Méthode DEBUG signalée par Nikto",
             gravite=grav, categorie="Configuration", description=desc,
             recommandation="Aucune action si la méthode est refusée ; sinon, la désactiver dans la configuration du serveur.",
-            preuves=[f"Nikto : {l}", f"Vérification : DEBUG → code {obs.get('debug_code')}"],
+            preuves=[f"Nikto : {l}", f"Vérification : DEBUG (Command: stop-debug) → code {obs.get('debug_code')}"
+                     + (", réponse « OK » du débogage" if obs.get("debug_accepte")
+                        else ", page normale du site" if obs.get("debug_code") == 200 else "")],
             sources=["Nikto", "Vérification"], verification=etat,
             reference="OWASP WSTG — Test HTTP Methods"))
     methodes = obs.get("methodes_annoncees", "")
