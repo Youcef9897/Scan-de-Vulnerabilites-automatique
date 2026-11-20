@@ -19,20 +19,20 @@ foreach (['commandes', 'produits', 'clients'] as $table) {
     $db->exec("DROP TABLE IF EXISTS $table");
 }
 $db->exec("CREATE TABLE clients (id $cle, nom VARCHAR(80) NOT NULL, email VARCHAR(120) NOT NULL UNIQUE,
-           mot_de_passe CHAR(32) NOT NULL, adresse VARCHAR(200) NOT NULL)$moteur");
+           mot_de_passe VARCHAR(255) NOT NULL, adresse VARCHAR(200) NOT NULL)$moteur");
 $db->exec("CREATE TABLE produits (id $cle, nom VARCHAR(120) NOT NULL, description VARCHAR(255) NOT NULL,
            prix DECIMAL(8,2) NOT NULL, categorie VARCHAR(40) NOT NULL)$moteur");
 $db->exec("CREATE TABLE commandes (id $cle, client_id INT NOT NULL, total DECIMAL(10,2) NOT NULL,
            detail TEXT NOT NULL, date_commande VARCHAR(19) NOT NULL)$moteur");
 
-// Faille volontaire : mots de passe hachés en MD5, sans sel (corrigé en S7-B).
+// Mots de passe hachés avec password_hash (bcrypt + sel) : jamais stockés en clair ni en MD5.
 $clients = [
     ['Alice Martin', 'alice@netstock.lab', 'alice2027', '12 rue Fictive, 75000 Paris'],
     ['Bob Durand', 'bob@netstock.lab', 'bob2027', '8 avenue Imaginaire, 69000 Lyon'],
 ];
 $ajout = $db->prepare('INSERT INTO clients (nom, email, mot_de_passe, adresse) VALUES (?, ?, ?, ?)');
 foreach ($clients as [$nom, $email, $mdp, $adresse]) {
-    $ajout->execute([$nom, $email, md5($mdp), $adresse]);
+    $ajout->execute([$nom, $email, password_hash($mdp, PASSWORD_DEFAULT), $adresse]);
 }
 
 $produits = [

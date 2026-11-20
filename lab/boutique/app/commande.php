@@ -1,14 +1,15 @@
 <?php
 require __DIR__ . '/inc/db.php';
 $titre = 'Commande';
-if (!client_connecte()) {
+$client = client_connecte();
+if (!$client) {
     header('Location: connexion.php');
     exit;
 }
-// Faille volontaire (IDOR) : la commande est affichée sans vérifier qu'elle appartient au client connecté.
+// La commande n'est affichée que si elle appartient au client connecté (plus d'IDOR).
 $requete = $db->prepare('SELECT c.*, cl.nom, cl.email, cl.adresse FROM commandes c
-                         JOIN clients cl ON cl.id = c.client_id WHERE c.id = ?');
-$requete->execute([(int) ($_GET['id'] ?? 0)]);
+                         JOIN clients cl ON cl.id = c.client_id WHERE c.id = ? AND c.client_id = ?');
+$requete->execute([(int) ($_GET['id'] ?? 0), (int) $client['id']]);
 $commande = $requete->fetch();
 require __DIR__ . '/inc/haut.php';
 ?>

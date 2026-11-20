@@ -13,12 +13,12 @@ require __DIR__ . '/inc/haut.php';
 ?>
 <h1>Catalogue</h1>
 <form class="recherche" method="get" action="index.php">
-  <input type="search" name="q" placeholder="Rechercher un produit" value="">
+  <input type="search" name="q" placeholder="Rechercher un produit" value="<?= e($q) ?>">
   <button>Rechercher</button>
 </form>
 <?php if ($q !== ''): ?>
-  <!-- Faille volontaire (XSS réfléchi) : le texte recherché est réaffiché sans échappement. -->
-  <p class="info">Résultats pour : <?= $q ?></p>
+  <!-- Le texte recherché est échappé avant affichage : il s'affiche, il ne s'exécute pas (plus de XSS). -->
+  <p class="info">Résultats pour : <?= e($q) ?></p>
 <?php endif; ?>
 <div class="grille">
 <?php foreach ($produits as $p): ?>
@@ -38,10 +38,10 @@ require __DIR__ . '/inc/haut.php';
     <p><?= e($p['description']) ?></p>
     <p class="prix"><?= euros((float) $p['prix']) ?></p>
     <form method="post" action="panier.php">
+      <?= champ_csrf() ?>
       <input type="hidden" name="action" value="ajouter">
       <input type="hidden" name="produit_id" value="<?= (int) $p['id'] ?>">
-      <!-- Faille volontaire : le prix est envoyé par le navigateur, et le serveur le croit. -->
-      <input type="hidden" name="prix" value="<?= e($p['prix']) ?>">
+      <!-- Plus de prix envoyé par le navigateur : le serveur le relit dans la base à partir de l'identifiant. -->
       <input type="number" name="quantite" value="1" min="1">
       <button>Ajouter au panier</button>
     </form>

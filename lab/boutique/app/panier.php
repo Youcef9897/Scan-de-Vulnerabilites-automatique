@@ -4,29 +4,42 @@ $titre = 'Panier';
 $message = '';
 $action = $_POST['action'] ?? '';
 
+// Toute action du panier passe par un POST protégé par un jeton anti-CSRF.
+if ($action !== '' && !csrf_valide()) {
+    $action = '';
+    $message = 'Session expirée, merci de réessayer.';
+}
+
 if ($action === 'ajouter') {
-    $requete = $db->prepare('SELECT id, nom FROM produits WHERE id = ?');
+    // Le prix est relu dans la base à partir de l'identifiant : la valeur envoyée par le navigateur est ignorée.
+    $requete = $db->prepare('SELECT id, nom, prix FROM produits WHERE id = ?');
     $requete->execute([(int) ($_POST['produit_id'] ?? 0)]);
     $produit = $requete->fetch();
     if ($produit) {
+        $quantite = max(1, (int) ($_POST['quantite'] ?? 1));   // au moins 1 : plus de quantité négative
         $_SESSION['panier'][] = [
             'produit_id' => (int) $produit['id'],
             'nom' => $produit['nom'],
-            'prix' => (float) ($_POST['prix'] ?? 0),        // Faille volontaire : prix venu du navigateur
-            'quantite' => (int) ($_POST['quantite'] ?? 1),  // Faille volontaire : quantité négative acceptée
+            'prix' => (float) $produit['prix'],                // prix de la base, jamais celui du navigateur
+            'quantite' => $quantite,
         ];
         $message = 'Produit ajouté au panier.';
     }
 } elseif ($action === 'code') {
-    if (strtoupper(trim($_POST['code'] ?? '')) === 'BIENVENUE10') {
-        $_SESSION['remises'][] = 10.0;                     // Faille volontaire : code réutilisable à l'infini
-        $message = 'Code BIENVENUE10 appliqué : 10 € de remise.';
-    } else {
+    $code = strtoupper(trim($_POST['code'] ?? ''));
+    if ($code !== 'BIENVENUE10') {
         $message = 'Code inconnu.';
+    } elseif (in_array('BIENVENUE10', $_SESSION['codes_utilises'], true)) {
+        $message = 'Ce code a déjà été appliqué.';          // un seul usage par panier
+    } else {
+        $_SESSION['codes_utilises'][] = 'BIENVENUE10';
+        $_SESSION['remises'][] = 10.0;
+        $message = 'Code BIENVENUE10 appliqué : 10 € de remise.';
     }
 } elseif ($action === 'vider') {
     $_SESSION['panier'] = [];
     $_SESSION['remises'] = [];
+    $_SESSION['codes_utilises'] = [];
 } elseif ($action === 'commander') {
     $client = client_connecte();
     if (!$client) {
@@ -40,6 +53,7 @@ if ($action === 'ajouter') {
         $numero = (int) $db->lastInsertId();
         $_SESSION['panier'] = [];
         $_SESSION['remises'] = [];
+        $_SESSION['codes_utilises'] = [];
         header('Location: commande.php?id=' . $numero);
         exit;
     }
@@ -62,11 +76,11 @@ require __DIR__ . '/inc/haut.php';
     <?php endforeach; ?>
     <tr class="total"><td colspan="3">Total</td><td><?= euros(total_panier()) ?></td></tr>
   </table>
-  <form class="ligne" method="post"><input type="hidden" name="action" value="code">
+  <form class="ligne" method="post"><?= champ_csrf() ?><input type="hidden" name="action" value="code">
     <input type="text" name="code" placeholder="Code promo"><button>Appliquer</button></form>
-  <form class="ligne" method="post"><input type="hidden" name="action" value="commander">
+  <form class="ligne" method="post"><?= champ_csrf() ?><input type="hidden" name="action" value="commander">
     <button>Valider la commande</button></form>
-  <form class="ligne" method="post"><input type="hidden" name="action" value="vider">
+  <form class="ligne" method="post"><?= champ_csrf() ?><input type="hidden" name="action" value="vider">
     <button class="second">Vider le panier</button></form>
 <?php endif; ?>
 <?php require __DIR__ . '/inc/bas.php';

@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<p class="lab">Site de démonstration <strong>volontairement vulnérable</strong>, pour un lab de sécurité. Données fictives. Ne pas déployer.</p>
+<p class="lab">NetStock Lab — <strong>version corrigée</strong> (exercice de sécurité). Données fictives.</p>
 <header>
   <a class="marque" href="index.php">NetStock Lab</a>
   <nav>

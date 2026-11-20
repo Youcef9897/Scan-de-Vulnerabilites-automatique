@@ -21,6 +21,23 @@ NetStock Lab est une petite boutique de matériel réseau (PHP + MariaDB) qui se
 
 Ni Nmap ni Nikto ne voient les trois fraudes de logique métier : elles se trouvent par des tests manuels (S5).
 
+> La version vulnérable est conservée sur la branche `v3-s3-boutique`. Cette branche (`v3-s7b-corrections`) contient la version corrigée décrite ci-dessous.
+
+## Corrections (S7-B)
+
+| Faille | Correction |
+|---|---|
+| Prix envoyé par le navigateur | Le serveur relit le prix dans la base à partir de l'identifiant ; la valeur du navigateur est ignorée (`panier.php`) |
+| Quantité négative | Quantité ramenée à 1 au minimum, `max(1, …)` (`panier.php`) |
+| Code promo réutilisable | Codes déjà appliqués mémorisés dans la session, un seul usage par panier (`panier.php`) |
+| Commande d'un autre client (IDOR) | La requête filtre aussi sur `client_id` du client connecté (`commande.php`) |
+| Injection SQL | Requête préparée avec paramètre lié (`connexion.php`) |
+| XSS réfléchi | Texte recherché échappé avec `htmlspecialchars` avant affichage (`index.php`) |
+| Erreur SQL affichée | Message générique, aucune erreur de base révélée (`connexion.php`) |
+| Mots de passe en MD5 | Hachage `password_hash` (bcrypt + sel), vérifié par `password_verify` (`inc/installer.php`, `connexion.php`) |
+| (en plus) CSRF | Jeton anti-CSRF par session dans chaque formulaire POST (`inc/db.php`) |
+| (en plus) En-têtes, cookie | En-têtes de sécurité et cookie de session `HttpOnly` + `SameSite` (`inc/db.php`) |
+
 ## Comptes de test (fictifs)
 
 | E-mail | Mot de passe |
@@ -50,5 +67,6 @@ Un produit sans photo ni illustration garde une vignette texte.
 
 ## Tests automatiques
 
-`scanner/tests/test_boutique.py` lance la boutique avec le serveur intégré de PHP et une base SQLite, et vérifie
-que chaque faille est bien présente. Après la correction (S7-B), ces tests seront inversés.
+`scanner/tests/test_boutique.py` lance la boutique avec le serveur intégré de PHP et une base SQLite. Sur cette
+branche corrigée, chaque test rejoue une attaque et vérifie qu'elle **échoue** maintenant (injection SQL bloquée,
+XSS échappé, prix relu dans la base, IDOR refusé, action sans jeton CSRF rejetée, en-têtes de sécurité présents).
