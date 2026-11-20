@@ -44,6 +44,8 @@ Les photos ne sont pas stockées dans le dépôt. `telecharger-photos.sh` (root,
 depuis Pexels et Unsplash, deux banques d'images à licence libre, d'après `app/img/photos.txt`, les met à
 400 × 260 px et les copie dans le site. Le pied de page crédite chaque photo avec un lien vers sa page d'origine.
 Le SSD n'a pas de photo libre sans marque : il a une illustration originale (`app/img/produit-6.svg`), stockée dans le dépôt.
+Le clavier (produit 5) utilise une photo personnelle copiée à la main dans la VM (`/var/www/netstock-lab/img/produit-5.jpg`) :
+elle n'est jamais mise dans le dépôt, car ses droits appartiennent à son auteur.
 Un produit sans photo ni illustration garde une vignette texte.
 
 ## Tests automatiques
