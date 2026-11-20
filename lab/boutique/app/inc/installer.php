@@ -40,7 +40,7 @@ $produits = [
     ['Switch 8 ports Gigabit', 'Switch non administrable, boîtier métal.', 29.90, 'Réseau'],
     ['Carte réseau PCIe 2,5 Gb/s', 'Carte RJ45 pour poste fixe.', 24.90, 'Réseau'],
     ['Point d\'accès Wi-Fi 6', 'Point d\'accès plafonnier, alimentation PoE.', 89.90, 'Réseau'],
-    ['Clavier mécanique', 'Clavier AZERTY, touches rétroéclairées.', 49.90, 'Poste de travail'],
+    ['Clavier AZERTY filaire', 'Clavier USB avec pavé numérique.', 49.90, 'Poste de travail'],
     ['Disque SSD 1 To', 'SSD M.2 NVMe, format 2280.', 79.90, 'Stockage'],
 ];
 $ajout = $db->prepare('INSERT INTO produits (nom, description, prix, categorie) VALUES (?, ?, ?, ?)');
