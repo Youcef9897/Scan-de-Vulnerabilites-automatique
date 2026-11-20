@@ -23,7 +23,12 @@ require __DIR__ . '/inc/haut.php';
 <div class="grille">
 <?php foreach ($produits as $p): ?>
   <article class="produit">
-    <?php $photo = 'img/produit-' . (int) $p['id'] . '.jpg'; ?>
+    <?php
+    $photo = 'img/produit-' . (int) $p['id'] . '.jpg';
+    if (!is_file(__DIR__ . '/' . $photo)) {
+        $photo = 'img/produit-' . (int) $p['id'] . '.svg';   // illustration maison quand il n'y a pas de photo libre
+    }
+    ?>
     <?php if (is_file(__DIR__ . '/' . $photo)): ?>
       <img class="vignette" src="<?= $photo ?>" alt="<?= e($p['nom']) ?>" width="400" height="260">
     <?php else: ?>

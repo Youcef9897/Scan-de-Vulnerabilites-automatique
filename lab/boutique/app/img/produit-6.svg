@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="400" height="260" role="img" aria-label="Disque SSD M.2 NVMe 1 To">
+  <!-- Illustration originale NetStock Lab (aucune marque) : SSD M.2 2280 générique. -->
+  <defs>
+    <linearGradient id="fond" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e3ecf4"/>
+      <stop offset="1" stop-color="#c3d2df"/>
+    </linearGradient>
+    <linearGradient id="pcb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b3036"/>
+      <stop offset="1" stop-color="#16191d"/>
+    </linearGradient>
+    <linearGradient id="or" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f3d58a"/>
+      <stop offset="1" stop-color="#c9973a"/>
+    </linearGradient>
+    <linearGradient id="etiquette" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4f6f8"/>
+      <stop offset="1" stop-color="#dfe5eb"/>
+    </linearGradient>
+    <mask id="decoupe">
+      <rect x="-150" y="-40" width="300" height="80" rx="3" fill="#fff"/>
+      <rect x="-152" y="14" width="13" height="7" fill="#000"/>
+      <circle cx="150" cy="0" r="8" fill="#000"/>
+    </mask>
+    <filter id="ombre" x="-20%" y="-40%" width="140%" height="190%">
+      <feDropShadow dx="0" dy="10" stdDeviation="9" flood-color="#1d2733" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="400" height="260" fill="url(#fond)"/>
+
+  <g transform="translate(200 132) rotate(-9)" filter="url(#ombre)">
+    <g mask="url(#decoupe)">
+      <rect x="-150" y="-40" width="300" height="80" fill="url(#pcb)"/>
+      <!-- Connecteur M.2 (contacts dorés, détrompeur M) -->
+      <g fill="url(#or)">
+        <rect x="-150" y="-36" width="13" height="3"/><rect x="-150" y="-31" width="13" height="3"/>
+        <rect x="-150" y="-26" width="13" height="3"/><rect x="-150" y="-21" width="13" height="3"/>
+        <rect x="-150" y="-16" width="13" height="3"/><rect x="-150" y="-11" width="13" height="3"/>
+        <rect x="-150" y="-6" width="13" height="3"/><rect x="-150" y="-1" width="13" height="3"/>
+        <rect x="-150" y="4" width="13" height="3"/><rect x="-150" y="9" width="13" height="3"/>
+        <rect x="-150" y="23" width="13" height="3"/><rect x="-150" y="28" width="13" height="3"/>
+        <rect x="-150" y="33" width="13" height="3"/>
+      </g>
+      <!-- Pastille de la vis de fixation -->
+      <circle cx="150" cy="0" r="12" fill="none" stroke="url(#or)" stroke-width="4"/>
+    </g>
+
+    <!-- Contrôleur -->
+    <rect x="-126" y="-24" width="46" height="46" rx="3" fill="#3a4047" stroke="#555d66" stroke-width="1"/>
+    <circle cx="-120" cy="-18" r="1.8" fill="#6b747e"/>
+
+    <!-- Composants passifs -->
+    <g fill="#b48a5a">
+      <rect x="-72" y="-33" width="5" height="3"/><rect x="-72" y="30" width="5" height="3"/>
+      <rect x="116" y="-30" width="5" height="3"/><rect x="116" y="27" width="5" height="3"/>
+      <rect x="124" y="-22" width="3" height="5"/><rect x="124" y="18" width="3" height="5"/>
+    </g>
+
+    <!-- Étiquette -->
+    <rect x="-62" y="-30" width="172" height="60" rx="3" fill="url(#etiquette)"/>
+    <rect x="-62" y="-30" width="6" height="60" fill="#0f5e8a"/>
+    <text x="-46" y="-6" font-family="system-ui, 'DejaVu Sans', sans-serif" font-size="11" fill="#5b6878">SSD M.2 NVMe</text>
+    <text x="-46" y="20" font-family="system-ui, 'DejaVu Sans', sans-serif" font-size="24" font-weight="700" fill="#1d2733">1 To</text>
+    <g fill="#9aa5b1">
+      <rect x="62" y="-18" width="2" height="22"/><rect x="66" y="-18" width="1" height="22"/>
+      <rect x="69" y="-18" width="3" height="22"/><rect x="74" y="-18" width="1" height="22"/>
+      <rect x="77" y="-18" width="2" height="22"/><rect x="81" y="-18" width="1" height="22"/>
+      <rect x="84" y="-18" width="3" height="22"/><rect x="89" y="-18" width="1" height="22"/>
+      <rect x="92" y="-18" width="2" height="22"/><rect x="96" y="-18" width="1" height="22"/>
+    </g>
+  </g>
+</svg>

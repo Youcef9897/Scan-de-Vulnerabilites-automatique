@@ -43,7 +43,8 @@ Désinstallation (root) : `a2dissite netstock-lab && systemctl reload apache2`, 
 Les photos ne sont pas stockées dans le dépôt. `telecharger-photos.sh` (root, après l'installation) les télécharge
 depuis Pexels et Unsplash, deux banques d'images à licence libre, d'après `app/img/photos.txt`, les met à
 400 × 260 px et les copie dans le site. Le pied de page crédite chaque photo avec un lien vers sa page d'origine.
-Un produit sans photo garde une vignette texte (le SSD, faute de photo libre adaptée).
+Le SSD n'a pas de photo libre sans marque : il a une illustration originale (`app/img/produit-6.svg`), stockée dans le dépôt.
+Un produit sans photo ni illustration garde une vignette texte.
 
 ## Tests automatiques
 

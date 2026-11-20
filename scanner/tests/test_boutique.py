@@ -131,7 +131,8 @@ def test_photo_affichee_avec_son_credit_seulement_si_telechargee(tmp_path):
             except requests.ConnectionError:
                 time.sleep(0.1)
         assert '<img class="vignette" src="img/produit-1.jpg"' in page
-        assert page.count('<img class="vignette"') == 1 and '<div class="vignette">Réseau</div>' in page
+        assert '<img class="vignette" src="img/produit-6.svg"' in page          # illustration du SSD
+        assert page.count('<img class="vignette"') == 2 and '<div class="vignette">Réseau</div>' in page
         assert 'Photos libres de droits : <a href="https://www.pexels.com/photo/4716292/">Pexels, photo n° 4716292</a>.' in page
     finally:
         serveur.terminate()
