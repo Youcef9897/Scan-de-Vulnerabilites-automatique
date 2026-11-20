@@ -1,7 +1,10 @@
-"""La méthode DEBUG n'est confirmée que si le serveur donne la vraie réponse du débogage ASP.NET.
+"""Corrections tirées du premier scan de la boutique NetStock Lab (20/11, 78 puis 86/100).
 
-Constat de la boutique NetStock Lab (20/11) : PHP répond 200 à DEBUG avec sa page normale,
-ce que l'ancienne vérification prenait pour une faille (−8 points à tort).
+- DEBUG : PHP répond 200 à n'importe quelle méthode avec sa page normale, ce que l'ancienne
+  vérification prenait pour une faille (−8 points à tort). Seule la vraie réponse du débogage
+  ASP.NET (« OK » à « Command: stop-debug ») confirme maintenant le constat.
+- Périmètre : le rapport rappelle ce que l'analyse ne teste pas (logique applicative).
+- Résumé : les sigles en tête de titre (HTTP…) gardent leurs majuscules.
 """
 import threading
 from http.server import ThreadingHTTPServer
@@ -63,3 +66,11 @@ def test_le_rapport_rappelle_ce_que_l_analyse_ne_couvre_pas():
     from vulnscan import score
     s = score.calculer([])
     assert "injection SQL" in s["perimetre"] and "ne garantit pas" in s["perimetre"]
+
+
+def test_le_resume_garde_les_sigles_en_majuscules():
+    # Scan de la boutique du 20/11 : le résumé écrivait « hTTP ne redirige pas vers HTTPS ».
+    from vulnscan.resume import _dans_la_phrase
+    assert _dans_la_phrase("HTTP ne redirige pas vers HTTPS") == "HTTP ne redirige pas vers HTTPS"
+    assert _dans_la_phrase("Cookie « PHPSESSID » sans protection") == "cookie « PHPSESSID » sans protection"
+    assert _dans_la_phrase("Certificat auto-signé") == "certificat auto-signé"

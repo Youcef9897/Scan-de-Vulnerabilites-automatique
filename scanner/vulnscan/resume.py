@@ -13,13 +13,20 @@ def _retenus(constats):
     return [c for c in constats if c.verification not in (FAUX_POSITIF, NON_CONFIRME) and c.gravite != "Info"]
 
 
+def _dans_la_phrase(titre: str) -> str:
+    """Met la première lettre en minuscule pour l'insérer dans une phrase, sauf devant un sigle (HTTP, XSS…)."""
+    if len(titre) > 1 and titre[1].isupper():
+        return titre
+    return titre[:1].lower() + titre[1:]
+
+
 def resume_automatique(cible, constats, score) -> str:
     retenus = _retenus(constats)
     c = score["comptes"]
     if not retenus:
         return (f"L'analyse de {cible.url} n'a relevé aucune faiblesse confirmée parmi les points contrôlés. "
                 f"Le score de sécurité est de {score['score']}/100 (niveau « {score['niveau']} »).")
-    priorites = " ; ".join(x.titre[0].lower() + x.titre[1:] for x in retenus[:3])
+    priorites = " ; ".join(_dans_la_phrase(x.titre) for x in retenus[:3])
     noms = {"Élevée": "de gravité élevée", "Moyenne": "de gravité moyenne", "Faible": "de gravité faible"}
     detail = ", ".join(f"{c[g]} {noms[g]}" for g in ("Élevée", "Moyenne", "Faible") if c[g])
     return (
