@@ -41,7 +41,7 @@ $produits = [
     ['Carte réseau PCIe 2,5 Gb/s', 'Carte RJ45 pour poste fixe.', 24.90, 'Réseau'],
     ['Point d\'accès Wi-Fi 6', 'Point d\'accès plafonnier, alimentation PoE.', 89.90, 'Réseau'],
     ['Clavier mécanique', 'Clavier AZERTY, touches rétroéclairées.', 49.90, 'Poste de travail'],
-    ['Disque SSD 1 To', 'SSD SATA 2,5 pouces.', 79.90, 'Stockage'],
+    ['Disque SSD 1 To', 'SSD M.2 NVMe, format 2280.', 79.90, 'Stockage'],
 ];
 $ajout = $db->prepare('INSERT INTO produits (nom, description, prix, categorie) VALUES (?, ?, ?, ?)');
 foreach ($produits as $p) {
