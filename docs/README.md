@@ -1,6 +1,3 @@
 # Documents du projet
 
-Ce dossier rassemblera :
-
-- **`rapport-projet.pdf`** — le rapport complet : la démarche, les failles trouvées, les corrections apportées, les problèmes rencontrés. _(En préparation.)_
-- **`captures/`** — les captures d'écran avant / après : les attaques, les scores d'analyse, les corrections. _(En préparation.)_
+- **[`rapport-projet.pdf`](rapport-projet.pdf)** — le rapport complet (20 pages) : la plateforme, le laboratoire NetStock Lab, les failles exploitées à la main, les corrections et leurs preuves, les 88 tests, les problèmes rencontrés et la suite prévue.
