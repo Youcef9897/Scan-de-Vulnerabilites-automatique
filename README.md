@@ -192,4 +192,4 @@ La plateforme refuse toute cible hors liste blanche et exige une confirmation d'
 
 ## Auteur
 
-**Youcef Fettal** — élève ingénieur à l'ESIEA, en recherche d'une **alternance de 2 ans en cybersécurité et réseaux** à partir de septembre 2027.
+**Youcef Fettal** — élève en école d'ingénieur à l'ESIEA.
